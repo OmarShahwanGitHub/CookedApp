@@ -16,7 +16,6 @@ export default function HomeLayout() {
         name="index"
         options={{
           title: 'Cooked',
-          headerLargeTitle: true,
         }}
       />
     </Stack>
