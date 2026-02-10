@@ -16,7 +16,6 @@ export default function GroceryLayout() {
         name="index"
         options={{
           title: 'Grocery List',
-          headerLargeTitle: true,
         }}
       />
     </Stack>

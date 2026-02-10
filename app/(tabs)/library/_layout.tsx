@@ -16,7 +16,6 @@ export default function LibraryLayout() {
         name="index"
         options={{
           title: 'My Recipes',
-          headerLargeTitle: true,
         }}
       />
     </Stack>
