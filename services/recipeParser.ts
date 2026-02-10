@@ -1,9 +1,5 @@
 import { ParsedRecipeData } from '@/types/recipe';
 
-export interface LLMProvider {
-  parseRecipe(text: string): Promise<ParsedRecipeData>;
-}
-
 const RECIPE_PARSE_PROMPT = `You are a recipe parser. Extract the following from the text below and return valid JSON only (no markdown, no explanation):
 
 {
@@ -27,61 +23,48 @@ Rules:
 Recipe text:
 `;
 
-export async function parseRecipeFromText(text: string): Promise<ParsedRecipeData> {
-  const apiKey = getApiKey();
+type ProviderName = 'Anthropic' | 'OpenAI' | 'Gemini';
 
-  if (apiKey) {
-    return parseWithLLM(text, apiKey);
+interface ProviderConfig {
+  name: ProviderName;
+  envKey: string;
+  call: (prompt: string, apiKey: string) => Promise<ParsedRecipeData>;
+}
+
+const PROVIDERS: ProviderConfig[] = [
+  { name: 'Anthropic', envKey: 'ANTHROPIC_API_KEY', call: callAnthropic },
+  { name: 'OpenAI', envKey: 'OPENAI_API_KEY', call: callOpenAI },
+  { name: 'Gemini', envKey: 'GEMINI_API_KEY', call: callGemini },
+];
+
+export async function parseRecipeFromText(text: string): Promise<ParsedRecipeData> {
+  const prompt = RECIPE_PARSE_PROMPT + text;
+
+  for (const provider of PROVIDERS) {
+    const apiKey = getEnvVar(provider.envKey);
+    if (!apiKey) {
+      continue;
+    }
+
+    try {
+      console.log(`Trying recipe parsing with ${provider.name}...`);
+      const result = await provider.call(prompt, apiKey);
+      console.log(`Successfully parsed recipe with ${provider.name}`);
+      return result;
+    } catch (error) {
+      console.warn(`${provider.name} parsing failed, trying next provider:`, error);
+    }
   }
 
+  console.log('No LLM providers available or all failed, using basic parser');
   return parseWithBasicParser(text);
 }
 
-function getApiKey(): string | null {
+function getEnvVar(key: string): string | null {
   if (typeof process !== 'undefined' && process.env) {
-    return process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || null;
+    return process.env[key] || null;
   }
   return null;
-}
-
-async function parseWithLLM(text: string, apiKey: string): Promise<ParsedRecipeData> {
-  const isAnthropic = apiKey.startsWith('sk-ant-');
-  const prompt = RECIPE_PARSE_PROMPT + text;
-
-  try {
-    if (isAnthropic) {
-      return await callAnthropic(prompt, apiKey);
-    } else {
-      return await callOpenAI(prompt, apiKey);
-    }
-  } catch (error) {
-    console.warn('LLM parsing failed, falling back to basic parser:', error);
-    return parseWithBasicParser(text);
-  }
-}
-
-async function callOpenAI(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
-  return validateParsedRecipe(JSON.parse(content));
 }
 
 async function callAnthropic(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
@@ -109,6 +92,67 @@ async function callAnthropic(prompt: string, apiKey: string): Promise<ParsedReci
   const jsonMatch = content.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error('No JSON found in Anthropic response');
+  }
+
+  return validateParsedRecipe(JSON.parse(jsonMatch[0]));
+}
+
+async function callOpenAI(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      response_format: { type: 'json_object' },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  return validateParsedRecipe(JSON.parse(content));
+}
+
+async function callGemini(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.3,
+          responseMimeType: 'application/json',
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Gemini API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!content) {
+    throw new Error('No content in Gemini response');
+  }
+
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('No JSON found in Gemini response');
   }
 
   return validateParsedRecipe(JSON.parse(jsonMatch[0]));

@@ -58,7 +58,9 @@ assets/               # Images and icons
 
 ## Where to Add API Keys
 All keys should be set as environment variables — never hardcoded in code:
-- `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` — for LLM-based recipe parsing
+- `ANTHROPIC_API_KEY` — for LLM-based recipe parsing (tried first)
+- `OPENAI_API_KEY` — for LLM-based recipe parsing (tried second)
+- `GEMINI_API_KEY` — for LLM-based recipe parsing (tried third)
 - `REVENUECAT_API_KEY` or `EXPO_PUBLIC_REVENUECAT_API_KEY` — for subscription management
 - `OCR_API_KEY` — for image-to-text extraction (stub, not yet implemented)
 - `TRANSCRIPTION_API_KEY` — for video-to-text transcription (stub, not yet implemented)
