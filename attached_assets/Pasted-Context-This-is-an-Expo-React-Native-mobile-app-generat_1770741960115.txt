@@ -1,0 +1,196 @@
+Context
+This is an Expo + React Native mobile app generated initially by Rork. I want to turn it into a clean, production-ready Expo app. You have access to the full repo.
+
+Your role
+Act as a senior React Native / Expo engineer. Make repo-wide changes where necessary. Prefer stability and simplicity over cleverness.
+
+1. Fix dependency & build issues (highest priority)
+
+Resolve all dependency conflicts so the app runs on Expo Go on iOS and later Testflight
+
+Fix any zod/v4, lucide-react-native, and React peer dependency issues.
+
+If needed:
+
+Downgrade React to a compatible version
+
+Pin package versions explicitly
+
+Remove or replace incompatible packages from @rork-ai/toolkit-sdk
+
+The goal: npx expo start --terminal works without errors
+
+Document what you changed and why.
+
+2. Clean up the Rork-generated structure
+
+Keep useful UI and screens
+
+Remove unused Rork abstractions if they add complexity
+
+Ensure:
+
+Clear /screens, /components, /services structure
+
+No hidden magic or auto-generated SDK behavior
+
+3. Implement recipe ingestion & parsing pipeline
+User inputs:
+
+Recipe URL
+
+Pasted text
+
+Image upload (photo of recipe)
+
+Architecture:
+
+Create a recipeParsingService
+
+This service should:
+
+Accept raw input
+
+Send it to an LLM (Claude or GPT)
+
+Receive structured JSON:
+
+title
+
+ingredients (editable)
+
+step-by-step instructions (simple, beginner-friendly)
+
+Do NOT hardcode any API keys
+
+Read API keys from environment variables later
+
+3.5 Input normalization rules (important)
+
+All recipe inputs must be converted into plain text before being sent to the LLM parser.
+There should be one shared parsing function for all inputs.
+
+Input handling expectations:
+
+Pasted text
+
+Sent directly to the parser
+
+Image upload
+
+Use OCR to extract text
+
+The OCR implementation should be abstracted (service-based), not hardcoded
+
+Assume an OCR provider will be added later via API key
+
+Recipe URL
+
+Fetch and extract readable text from the page (HTML → text)
+
+Ignore ads, comments, and navigation where possible
+
+Do NOT scrape aggressively or bypass paywalls
+
+Video URL
+
+Treat transcription as an optional enhancement
+
+Stub this initially:
+
+Either placeholder transcription
+
+Or graceful “coming soon” state
+
+Architecture should allow adding a transcription API later
+
+Architectural constraints:
+
+Do NOT implement multiple parsing pipelines
+
+Everything must flow through:
+
+normalizeInputToText()
+
+then parseRecipeFromText()
+
+Avoid hard dependency on any single OCR or transcription vendor
+
+Prefer clean interfaces over full implementations
+4. Core app features to implement
+Required:
+
+Editable grocery list
+
+Checkbox for “already have this”
+
+Saved recipe library
+
+Categories (e.g. pasta, vegetarian, pizza)
+
+“Saved” vs “Cooked” state
+
+Calendar/reminder feature
+
+Lightweight (local notifications is fine)
+
+Explicitly do NOT add:
+
+Social features
+
+Public feeds
+
+Recipe ebook uploads
+
+5. RevenueCat integration
+
+Implement RevenueCat with the following logic:
+
+Free tier:
+
+Max 10 saved recipes
+
+When user hits the limit:
+
+Show a paywall screen
+
+Subscription unlocks:
+
+Unlimited recipes
+
+Use RevenueCat SDK for Expo / React Native
+
+Authentication:
+
+Anonymous users allowed
+
+Upgrade on subscription
+
+Do NOT hardcode RevenueCat keys. Assume they come from env config.
+
+6. Platform readiness
+
+Ensure app works on:
+
+iOS (Expo Go / TestFlight-ready)
+
+Avoid web-only libraries
+
+Avoid Node-only APIs
+
+7. Output expectations
+
+Make code changes directly in the repo
+
+Add comments where non-obvious
+
+Leave a short README section explaining:
+
+How to run locally
+
+Where to add API keys
+
+How monetization works
+
+Primary goal
+A stable Expo app that runs on a real phone, parses recipes cleanly, and enforces a RevenueCat paywall after 10 recipes.
