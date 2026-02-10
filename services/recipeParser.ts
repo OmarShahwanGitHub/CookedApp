@@ -149,6 +149,18 @@ export async function parseRecipeFromImages(imageUris: string[]): Promise<Parsed
   throw new Error('Could not parse recipe from images. Make sure you have an AI API key set in your .env file (EXPO_PUBLIC_ANTHROPIC_API_KEY, EXPO_PUBLIC_OPENAI_API_KEY, or EXPO_PUBLIC_GEMINI_API_KEY).');
 }
 
+async function handleApiError(providerName: string, response: Response): Promise<never> {
+  let errorDetail = '';
+  try {
+    const errorBody = await response.json();
+    errorDetail = JSON.stringify(errorBody);
+    console.error(`${providerName} error body:`, errorDetail);
+  } catch {
+    errorDetail = await response.text().catch(() => 'unknown');
+  }
+  throw new Error(`${providerName} API error ${response.status}: ${errorDetail}`);
+}
+
 async function callAnthropicText(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -156,6 +168,7 @@ async function callAnthropicText(prompt: string, apiKey: string): Promise<Parsed
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
@@ -165,7 +178,7 @@ async function callAnthropicText(prompt: string, apiKey: string): Promise<Parsed
   });
 
   if (!response.ok) {
-    throw new Error(`Anthropic API error: ${response.status}`);
+    await handleApiError('Anthropic', response);
   }
 
   const data = await response.json();
@@ -190,6 +203,7 @@ async function callAnthropicVision(images: ImageData[], apiKey: string): Promise
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
@@ -199,7 +213,7 @@ async function callAnthropicVision(images: ImageData[], apiKey: string): Promise
   });
 
   if (!response.ok) {
-    throw new Error(`Anthropic Vision API error: ${response.status}`);
+    await handleApiError('Anthropic Vision', response);
   }
 
   const data = await response.json();
@@ -223,7 +237,7 @@ async function callOpenAIText(prompt: string, apiKey: string): Promise<ParsedRec
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+    await handleApiError('OpenAI', response);
   }
 
   const data = await response.json();
@@ -255,7 +269,7 @@ async function callOpenAIVision(images: ImageData[], apiKey: string): Promise<Pa
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI Vision API error: ${response.status}`);
+    await handleApiError('OpenAI Vision', response);
   }
 
   const data = await response.json();
@@ -280,7 +294,7 @@ async function callGeminiText(prompt: string, apiKey: string): Promise<ParsedRec
   );
 
   if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status}`);
+    await handleApiError('Gemini', response);
   }
 
   const data = await response.json();
@@ -314,7 +328,7 @@ async function callGeminiVision(images: ImageData[], apiKey: string): Promise<Pa
   );
 
   if (!response.ok) {
-    throw new Error(`Gemini Vision API error: ${response.status}`);
+    await handleApiError('Gemini Vision', response);
   }
 
   const data = await response.json();
