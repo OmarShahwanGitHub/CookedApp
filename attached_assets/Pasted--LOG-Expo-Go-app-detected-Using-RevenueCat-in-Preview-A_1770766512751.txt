@@ -1,0 +1,46 @@
+ LOG  Expo Go app detected. Using RevenueCat in Preview API Mode.
+ WARN  [RevenueCat] [configure], You successfully installed the RevenueCat SDK. However, it's currently running in Preview API mode because it requires some native modules that are not available in Expo Go. All the APIs are available but have no effect. Please, use a development build to test the real behavior of the RevenueCat SDK.
+ LOG  RevenueCat initialized
+ LOG  Trying recipe parsing with Anthropic...
+ WARN  Anthropic parsing failed, trying next provider: [Error: Anthropic API error 400: {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CY1GJcBdfYi92ojTLdaYK"}]
+ LOG  Trying recipe parsing with OpenAI...
+ ERROR  Anthropic error body: {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CY1GJcBdfYi92ojTLdaYK"}
+
+Code: recipeParser.ts
+  155 |     const errorBody = await response.json();
+  156 |     errorDetail = JSON.stringify(errorBody);
+> 157 |     console.error(`${providerName} error body:`, errorDetail);
+      |                  ^
+  158 |   } catch {
+  159 |     errorDetail = await response.text().catch(() => 'unknown');
+  160 |   }
+Call Stack
+  handleApiError (services/recipeParser.ts:157:18)
+ ERROR  OpenAI error body: {"error":{"message":"Incorrect API key provided: your_key*here. You can find your API key at https://platform.openai.com/account/api-keys.","type":"invalid_request_error","param":null,"code":"invalid_api_key"}}
+
+Code: recipeParser.ts
+  155 |     const errorBody = await response.json();
+  156 |     errorDetail = JSON.stringify(errorBody);
+> 157 |     console.error(`${providerName} error body:`, errorDetail);
+      |                  ^
+  158 |   } catch {
+  159 |     errorDetail = await response.text().catch(() => 'unknown');
+  160 |   }
+Call Stack
+  handleApiError (services/recipeParser.ts:157:18)
+ WARN  OpenAI parsing failed, trying next provider: [Error: OpenAI API error 401: {"error":{"message":"Incorrect API key provided: your_key*here. You can find your API key at https://platform.openai.com/account/api-keys.","type":"invalid_request_error","param":null,"code":"invalid_api_key"}}]
+ LOG  Trying recipe parsing with Gemini...
+ WARN  Gemini parsing failed, trying next provider: [Error: Gemini API error 429: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\nPlease retry in 6.439120024s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.0-flash"}},{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.0-flash"}},{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_input_token_count","quotaId":"GenerateContentInputTokensPerModelPerMinute-FreeTier","quotaDimensions":{"model":"gemini-2.0-flash","location":"global"}}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"6s"}]}}]
+ ERROR  Gemini error body: {"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\nPlease retry in 6.439120024s.","status":"RESOURCE_EXHAUSTED","details":[{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Learn more about Gemini API quotas","url":"https://ai.google.dev/gemini-api/docs/rate-limits"}]},{"@type":"type.googleapis.com/google.rpc.QuotaFailure","violations":[{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.0-flash"}},{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_requests","quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaDimensions":{"location":"global","model":"gemini-2.0-flash"}},{"quotaMetric":"generativelanguage.googleapis.com/generate_content_free_tier_input_token_count","quotaId":"GenerateContentInputTokensPerModelPerMinute-FreeTier","quotaDimensions":{"model":"gemini-2.0-flash","location":"global"}}]},{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"6s"}]}}
+
+Code: recipeParser.ts
+  155 |     const errorBody = await response.json();
+  156 |     errorDetail = JSON.stringify(errorBody);
+> 157 |     console.error(`${providerName} error body:`, errorDetail);
+      |                  ^
+  158 |   } catch {
+  159 |     errorDetail = await response.text().catch(() => 'unknown');
+  160 |   }
+Call Stack
+  handleApiError (services/recipeParser.ts:157:18)
+ LOG  No LLM providers available or all failed, using basic parser
