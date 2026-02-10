@@ -1,11 +1,16 @@
 import { ParsedRecipeData } from '@/types/recipe';
 import { normalizeInputToText, InputType } from '@/services/inputNormalizer';
-import { parseRecipeFromText as parseWithService } from '@/services/recipeParser';
+import { parseRecipeFromText as parseWithService, parseRecipeFromImages } from '@/services/recipeParser';
 
 export async function parseRecipe(
   input: string | string[],
   inputType: InputType
 ): Promise<ParsedRecipeData> {
+  if (inputType === 'image') {
+    const imageUris = Array.isArray(input) ? input : [input];
+    return parseRecipeFromImages(imageUris);
+  }
+
   const normalized = await normalizeInputToText(input, inputType);
 
   if (normalized.metadata?.isStub) {

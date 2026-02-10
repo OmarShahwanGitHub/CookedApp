@@ -1,4 +1,5 @@
 import { ParsedRecipeData } from '@/types/recipe';
+import { readAsStringAsync } from 'expo-file-system/legacy';
 
 const RECIPE_PARSE_PROMPT = `You are a recipe parser. Extract the following from the text below and return valid JSON only (no markdown, no explanation):
 
@@ -23,32 +24,60 @@ Rules:
 Recipe text:
 `;
 
+const IMAGE_PARSE_PROMPT = `You are a recipe parser. Look at the recipe image(s) and extract all recipe information. Return valid JSON only (no markdown, no explanation):
+
+{
+  "title": "Recipe Title",
+  "description": "Brief description",
+  "ingredients": [
+    { "name": "ingredient name", "quantity": "amount with unit" }
+  ],
+  "steps": [
+    { "order": 1, "instruction": "Step instruction written for a beginner cook" }
+  ]
+}
+
+Rules:
+- Make instructions beginner-friendly and clear
+- Include exact quantities where available
+- If quantities are missing, estimate reasonable amounts
+- Break complex steps into simpler sub-steps
+- Keep ingredient names simple (e.g., "olive oil" not "extra virgin cold-pressed olive oil")
+- Read all text visible in the image(s) carefully
+`;
+
 type ProviderName = 'Anthropic' | 'OpenAI' | 'Gemini';
 
 interface ProviderConfig {
   name: ProviderName;
   envKey: string;
-  call: (prompt: string, apiKey: string) => Promise<ParsedRecipeData>;
+  callText: (prompt: string, apiKey: string) => Promise<ParsedRecipeData>;
+  callVision: (images: ImageData[], apiKey: string) => Promise<ParsedRecipeData>;
 }
 
 const PROVIDERS: ProviderConfig[] = [
-  { name: 'Anthropic', envKey: 'ANTHROPIC_API_KEY', call: callAnthropic },
-  { name: 'OpenAI', envKey: 'OPENAI_API_KEY', call: callOpenAI },
-  { name: 'Gemini', envKey: 'GEMINI_API_KEY', call: callGemini },
+  { name: 'Anthropic', envKey: 'ANTHROPIC_API_KEY', callText: callAnthropicText, callVision: callAnthropicVision },
+  { name: 'OpenAI', envKey: 'OPENAI_API_KEY', callText: callOpenAIText, callVision: callOpenAIVision },
+  { name: 'Gemini', envKey: 'GEMINI_API_KEY', callText: callGeminiText, callVision: callGeminiVision },
 ];
+
+function getEnvVar(key: string): string | null {
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[`EXPO_PUBLIC_${key}`] || process.env[key] || null;
+  }
+  return null;
+}
 
 export async function parseRecipeFromText(text: string): Promise<ParsedRecipeData> {
   const prompt = RECIPE_PARSE_PROMPT + text;
 
   for (const provider of PROVIDERS) {
     const apiKey = getEnvVar(provider.envKey);
-    if (!apiKey) {
-      continue;
-    }
+    if (!apiKey) continue;
 
     try {
       console.log(`Trying recipe parsing with ${provider.name}...`);
-      const result = await provider.call(prompt, apiKey);
+      const result = await provider.callText(prompt, apiKey);
       console.log(`Successfully parsed recipe with ${provider.name}`);
       return result;
     } catch (error) {
@@ -60,14 +89,67 @@ export async function parseRecipeFromText(text: string): Promise<ParsedRecipeDat
   return parseWithBasicParser(text);
 }
 
-function getEnvVar(key: string): string | null {
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env[key] || null;
-  }
-  return null;
+interface ImageData {
+  base64: string;
+  mimeType: string;
 }
 
-async function callAnthropic(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
+function detectMimeType(uri: string): string {
+  const lower = uri.toLowerCase();
+  if (lower.includes('.png')) return 'image/png';
+  if (lower.includes('.gif')) return 'image/gif';
+  if (lower.includes('.webp')) return 'image/webp';
+  if (lower.includes('.heic') || lower.includes('.heif')) return 'image/jpeg';
+  return 'image/jpeg';
+}
+
+export async function parseRecipeFromImages(imageUris: string[]): Promise<ParsedRecipeData> {
+  const maxImages = 5;
+  const urisToProcess = imageUris.slice(0, maxImages);
+
+  const images: ImageData[] = [];
+  for (const uri of urisToProcess) {
+    try {
+      const base64 = await readAsStringAsync(uri, {
+        encoding: 'base64',
+      });
+
+      if (base64.length > 10 * 1024 * 1024) {
+        console.warn(`Image too large, skipping: ${uri}`);
+        continue;
+      }
+
+      images.push({
+        base64,
+        mimeType: detectMimeType(uri),
+      });
+    } catch (error) {
+      console.warn(`Failed to read image: ${uri}`, error);
+    }
+  }
+
+  if (images.length === 0) {
+    throw new Error('Could not read any of the selected images. Please try selecting different images.');
+  }
+
+  for (const provider of PROVIDERS) {
+    const apiKey = getEnvVar(provider.envKey);
+    if (!apiKey) continue;
+
+    try {
+      console.log(`Trying image parsing with ${provider.name}...`);
+      const result = await provider.callVision(images, apiKey);
+      console.log(`Successfully parsed recipe images with ${provider.name}`);
+      return result;
+    } catch (error) {
+      console.warn(`${provider.name} image parsing failed, trying next provider:`, error);
+    }
+  }
+
+  throw new Error('Could not parse recipe from images. Make sure you have an AI API key set in your .env file (EXPO_PUBLIC_ANTHROPIC_API_KEY, EXPO_PUBLIC_OPENAI_API_KEY, or EXPO_PUBLIC_GEMINI_API_KEY).');
+}
+
+async function callAnthropicText(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -88,16 +170,44 @@ async function callAnthropic(prompt: string, apiKey: string): Promise<ParsedReci
 
   const data = await response.json();
   const content = data.content?.[0]?.text;
-
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('No JSON found in Anthropic response');
-  }
-
-  return validateParsedRecipe(JSON.parse(jsonMatch[0]));
+  return extractAndValidateJson(content);
 }
 
-async function callOpenAI(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
+async function callAnthropicVision(images: ImageData[], apiKey: string): Promise<ParsedRecipeData> {
+  const content: any[] = images.map(img => ({
+    type: 'image',
+    source: {
+      type: 'base64',
+      media_type: img.mimeType,
+      data: img.base64,
+    },
+  }));
+  content.push({ type: 'text', text: IMAGE_PARSE_PROMPT });
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content }],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Anthropic Vision API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.content?.[0]?.text;
+  return extractAndValidateJson(text);
+}
+
+async function callOpenAIText(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -121,14 +231,44 @@ async function callOpenAI(prompt: string, apiKey: string): Promise<ParsedRecipeD
   return validateParsedRecipe(JSON.parse(content));
 }
 
-async function callGemini(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
+async function callOpenAIVision(images: ImageData[], apiKey: string): Promise<ParsedRecipeData> {
+  const content: any[] = images.map(img => ({
+    type: 'image_url',
+    image_url: {
+      url: `data:${img.mimeType};base64,${img.base64}`,
+    },
+  }));
+  content.push({ type: 'text', text: IMAGE_PARSE_PROMPT });
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content }],
+      temperature: 0.3,
+      response_format: { type: 'json_object' },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI Vision API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content;
+  return validateParsedRecipe(JSON.parse(text));
+}
+
+async function callGeminiText(prompt: string, apiKey: string): Promise<ParsedRecipeData> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
@@ -145,16 +285,49 @@ async function callGemini(prompt: string, apiKey: string): Promise<ParsedRecipeD
 
   const data = await response.json();
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!content) throw new Error('No content in Gemini response');
+  return extractAndValidateJson(content);
+}
 
-  if (!content) {
-    throw new Error('No content in Gemini response');
+async function callGeminiVision(images: ImageData[], apiKey: string): Promise<ParsedRecipeData> {
+  const parts: any[] = images.map(img => ({
+    inline_data: {
+      mime_type: img.mimeType,
+      data: img.base64,
+    },
+  }));
+  parts.push({ text: IMAGE_PARSE_PROMPT });
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts }],
+        generationConfig: {
+          temperature: 0.3,
+          responseMimeType: 'application/json',
+        },
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Gemini Vision API error: ${response.status}`);
   }
 
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  const data = await response.json();
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!content) throw new Error('No content in Gemini Vision response');
+  return extractAndValidateJson(content);
+}
+
+function extractAndValidateJson(text: string): ParsedRecipeData {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    throw new Error('No JSON found in Gemini response');
+    throw new Error('No JSON found in response');
   }
-
   return validateParsedRecipe(JSON.parse(jsonMatch[0]));
 }
 
