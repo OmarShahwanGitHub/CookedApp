@@ -43,3 +43,8 @@ yarn-error.*
 .env
 rork-eslint.config.js
 core
+ios/
+android/
+.rork
+.env
+rork-eslint.config.js
