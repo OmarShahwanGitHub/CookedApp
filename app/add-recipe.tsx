@@ -11,30 +11,29 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
-import { X, Type, Link2, Image as ImageIcon, ChevronRight, Trash2 } from 'lucide-react-native';
+import { X, Type, Link2, Image as ImageIcon, Video, ChevronRight, Trash2 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
 import { useRecipes } from '@/context/RecipeContext';
 import { RecipeSource, ParsedRecipeData, Ingredient, RecipeStep, RecipeCategory } from '@/types/recipe';
-import {
-  parseRecipeFromText,
-  parseRecipeFromLink,
-  parseRecipeFromImages,
-  generateId,
-} from '@/utils/parseRecipe';
+import { parseRecipe, generateId } from '@/utils/parseRecipe';
+import { canAddRecipe } from '@/services/subscriptionService';
 import { RECIPE_CATEGORIES } from '@/constants/categories';
+import PaywallScreen from '@/components/PaywallScreen';
 
-type InputMode = 'select' | 'text' | 'link' | 'image';
+type InputMode = 'select' | 'text' | 'link' | 'image' | 'video';
 
 export default function AddRecipeScreen() {
   const router = useRouter();
-  const { addRecipe } = useRecipes();
+  const { addRecipe, recipes } = useRecipes();
   
   const [mode, setMode] = useState<InputMode>('select');
   const [textInput, setTextInput] = useState('');
   const [linkInput, setLinkInput] = useState('');
+  const [videoInput, setVideoInput] = useState('');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   
   const [parsedData, setParsedData] = useState<ParsedRecipeData | null>(null);
   const [title, setTitle] = useState('');
@@ -72,19 +71,28 @@ export default function AddRecipeScreen() {
     setIsProcessing(true);
     
     try {
-      let data: ParsedRecipeData;
-      
+      let input: string | string[];
+      let inputType: 'text' | 'url' | 'image' | 'video';
+
       if (mode === 'text' && textInput.trim()) {
-        data = await parseRecipeFromText(textInput);
+        input = textInput;
+        inputType = 'text';
       } else if (mode === 'link' && linkInput.trim()) {
-        data = await parseRecipeFromLink(linkInput);
+        input = linkInput;
+        inputType = 'url';
       } else if (mode === 'image' && selectedImages.length > 0) {
-        data = await parseRecipeFromImages(selectedImages);
+        input = selectedImages;
+        inputType = 'image';
+      } else if (mode === 'video' && videoInput.trim()) {
+        input = videoInput;
+        inputType = 'video';
       } else {
         Alert.alert('Missing Input', 'Please provide recipe content to parse.');
         setIsProcessing(false);
         return;
       }
+
+      const data = await parseRecipe(input, inputType);
 
       setParsedData(data);
       setTitle(data.title);
@@ -133,7 +141,7 @@ export default function AddRecipeScreen() {
     );
   };
 
-  const handleSaveRecipe = () => {
+  const handleSaveRecipe = async () => {
     if (!title.trim()) {
       Alert.alert('Missing Title', 'Please enter a recipe title.');
       return;
@@ -144,7 +152,13 @@ export default function AddRecipeScreen() {
       return;
     }
 
-    const source: RecipeSource = mode === 'text' ? 'text' : mode === 'link' ? 'link' : 'image';
+    const allowed = await canAddRecipe(recipes.length);
+    if (!allowed) {
+      setShowPaywall(true);
+      return;
+    }
+
+    const source: RecipeSource = mode === 'text' ? 'text' : mode === 'link' ? 'link' : mode === 'video' ? 'video' : 'image';
 
     addRecipe({
       title: title.trim(),
@@ -154,7 +168,7 @@ export default function AddRecipeScreen() {
       category,
       status: 'saved',
       source,
-      sourceUrl: mode === 'link' ? linkInput : undefined,
+      sourceUrl: mode === 'link' ? linkInput : mode === 'video' ? videoInput : undefined,
       imageUri: selectedImages[0],
       cookDate: cookDate || undefined,
       reminderEnabled,
@@ -208,6 +222,21 @@ export default function AddRecipeScreen() {
         <View style={styles.modeContent}>
           <Text style={styles.modeOptionTitle}>Upload Images</Text>
           <Text style={styles.modeOptionDesc}>Take or select recipe photos</Text>
+        </View>
+        <ChevronRight size={20} color={Colors.textLight} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.modeOption}
+        onPress={() => handleSelectMode('video')}
+        testID="mode-video"
+      >
+        <View style={[styles.modeIcon, { backgroundColor: '#E8EEF4' }]}>
+          <Video size={24} color="#5B7FA5" />
+        </View>
+        <View style={styles.modeContent}>
+          <Text style={styles.modeOptionTitle}>Paste Video Link</Text>
+          <Text style={styles.modeOptionDesc}>Import from a recipe video URL</Text>
         </View>
         <ChevronRight size={20} color={Colors.textLight} />
       </TouchableOpacity>
@@ -302,6 +331,33 @@ export default function AddRecipeScreen() {
           <ActivityIndicator color={Colors.white} />
         ) : (
           <Text style={styles.parseButtonText}>Parse Images</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderVideoInput = () => (
+    <View style={styles.inputContainer}>
+      <Text style={styles.inputLabel}>Paste video URL</Text>
+      <TextInput
+        style={styles.linkInput}
+        placeholder="https://youtube.com/watch?v=..."
+        placeholderTextColor={Colors.textLight}
+        value={videoInput}
+        onChangeText={setVideoInput}
+        autoCapitalize="none"
+        keyboardType="url"
+        testID="video-input"
+      />
+      <TouchableOpacity
+        style={[styles.parseButton, !videoInput.trim() && styles.parseButtonDisabled]}
+        onPress={handleParse}
+        disabled={!videoInput.trim() || isProcessing}
+      >
+        {isProcessing ? (
+          <ActivityIndicator color={Colors.white} />
+        ) : (
+          <Text style={styles.parseButtonText}>Import from Video</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -426,6 +482,15 @@ export default function AddRecipeScreen() {
     </ScrollView>
   );
 
+  if (showPaywall) {
+    return (
+      <PaywallScreen
+        onDismiss={() => setShowPaywall(false)}
+        onSubscribed={() => setShowPaywall(false)}
+      />
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -453,6 +518,7 @@ export default function AddRecipeScreen() {
           {mode === 'text' && renderTextInput()}
           {mode === 'link' && renderLinkInput()}
           {mode === 'image' && renderImageInput()}
+          {mode === 'video' && renderVideoInput()}
         </ScrollView>
       )}
     </View>

@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RecipeProvider } from '@/context/RecipeContext';
+import { initializeSubscriptions } from '@/services/subscriptionService';
 import Colors from '@/constants/colors';
 
 SplashScreen.preventAutoHideAsync();
@@ -42,6 +43,7 @@ function RootLayoutNav() {
 export default function RootLayout() {
   useEffect(() => {
     SplashScreen.hideAsync();
+    initializeSubscriptions().catch(console.warn);
   }, []);
 
   return (

@@ -26,7 +26,7 @@ export type RecipeCategory =
 
 export type RecipeStatus = 'saved' | 'cooked';
 
-export type RecipeSource = 'text' | 'link' | 'image';
+export type RecipeSource = 'text' | 'link' | 'image' | 'video';
 
 export interface Recipe {
   id: string;

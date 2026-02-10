@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import createContextHook from '@nkzw/create-context-hook';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { Recipe, Ingredient, RecipeCategory, RecipeStatus } from '@/types/recipe';
 import { generateId } from '@/utils/parseRecipe';
 
@@ -25,7 +24,22 @@ async function saveRecipes(recipes: Recipe[]): Promise<void> {
   }
 }
 
-export const [RecipeProvider, useRecipes] = createContextHook(() => {
+interface RecipeContextValue {
+  recipes: Recipe[];
+  isLoading: boolean;
+  addRecipe: (recipe: Omit<Recipe, 'id' | 'createdAt' | 'updatedAt'>) => Recipe;
+  updateRecipe: (id: string, updates: Partial<Recipe>) => void;
+  deleteRecipe: (id: string) => void;
+  updateIngredient: (recipeId: string, ingredientId: string, updates: Partial<Ingredient>) => void;
+  toggleIngredientChecked: (recipeId: string, ingredientId: string) => void;
+  toggleIngredientAlreadyHave: (recipeId: string, ingredientId: string) => void;
+  markAsCooked: (id: string) => void;
+  getRecipeById: (id: string) => Recipe | undefined;
+}
+
+const RecipeContext = createContext<RecipeContextValue | null>(null);
+
+export function RecipeProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
 
@@ -113,7 +127,7 @@ export const [RecipeProvider, useRecipes] = createContextHook(() => {
     return recipes.find(r => r.id === id);
   }, [recipes]);
 
-  return {
+  const value = useMemo(() => ({
     recipes,
     isLoading: recipesQuery.isLoading,
     addRecipe,
@@ -124,8 +138,33 @@ export const [RecipeProvider, useRecipes] = createContextHook(() => {
     toggleIngredientAlreadyHave,
     markAsCooked,
     getRecipeById,
-  };
-});
+  }), [
+    recipes,
+    recipesQuery.isLoading,
+    addRecipe,
+    updateRecipe,
+    deleteRecipe,
+    updateIngredient,
+    toggleIngredientChecked,
+    toggleIngredientAlreadyHave,
+    markAsCooked,
+    getRecipeById,
+  ]);
+
+  return (
+    <RecipeContext.Provider value={value}>
+      {children}
+    </RecipeContext.Provider>
+  );
+}
+
+export function useRecipes(): RecipeContextValue {
+  const context = useContext(RecipeContext);
+  if (!context) {
+    throw new Error('useRecipes must be used within a RecipeProvider');
+  }
+  return context;
+}
 
 export function useRecipesByCategory(category?: RecipeCategory) {
   const { recipes } = useRecipes();
@@ -145,7 +184,7 @@ export function useGroceryList() {
   return useMemo(() => {
     const savedRecipes = recipes.filter(r => r.status === 'saved');
     const allIngredients: (Ingredient & { recipeId: string; recipeTitle: string })[] = [];
-    
+
     savedRecipes.forEach(recipe => {
       recipe.ingredients.forEach(ingredient => {
         allIngredients.push({
@@ -155,7 +194,7 @@ export function useGroceryList() {
         });
       });
     });
-    
+
     return allIngredients;
   }, [recipes]);
 }
