@@ -27,9 +27,9 @@ A recipe management app built with Expo (React Native for Web/iOS) and expo-rout
 - **Build Tool**: Metro bundler (standard Expo config)
 - **Subscriptions**: RevenueCat (react-native-purchases)
 - **Notifications**: expo-notifications (local only)
-- **Backend**: Node.js Express server on port 3001 (video parsing API)
-- **Video Processing**: @distube/ytdl-core, fluent-ffmpeg, ffmpeg (system)
+- **Video Processing**: Metro custom middleware + @distube/ytdl-core, fluent-ffmpeg, ffmpeg (system)
 - **Transcription**: OpenAI Whisper API (requires OPENAI_API_KEY)
+- **Backend**: Video parsing runs as Metro middleware (dev) or standalone Express server (production)
 
 ## Project Structure
 ```
@@ -65,10 +65,10 @@ assets/               # Images and icons
 
 ## Development
 - **Start (web)**: `npx expo start --web --port 5000`
-- **Start backend**: `node server/index.js` (port 3001)
 - **Start (iOS)**: `npx expo start --ios`
 - **Export**: `npx expo export --platform web`
-- **Port**: 5000 (Expo web), 3001 (video parser backend)
+- **Port**: 5000 (Expo web dev server, also serves /parse-video API via Metro middleware)
+- **Production backend**: `node server/index.js` (standalone Express, set EXPO_PUBLIC_VIDEO_BACKEND_URL)
 - **Package Manager**: npm (with --legacy-peer-deps for install)
 
 ## Where to Add API Keys

@@ -9,11 +9,10 @@ function getVideoBackendUrl(): string {
 
   const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost || Constants.manifest?.debuggerHost;
   if (debuggerHost) {
-    const lanIp = debuggerHost.split(':')[0];
-    return `http://${lanIp}:3001`;
+    return `http://${debuggerHost}`;
   }
 
-  return 'http://localhost:3001';
+  return 'http://localhost:8081';
 }
 
 export async function parseRecipe(
