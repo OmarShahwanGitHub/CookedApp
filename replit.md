@@ -27,7 +27,7 @@ A recipe management app built with Expo (React Native for Web/iOS) and expo-rout
 - **Build Tool**: Metro bundler (standard Expo config)
 - **Subscriptions**: RevenueCat (react-native-purchases)
 - **Notifications**: expo-notifications (local only)
-- **Backend**: Node.js Express server on port 5000 (serves API + proxies Metro)
+- **Backend**: Node.js Express server on port 3001 (video parsing API)
 - **Video Processing**: @distube/ytdl-core, fluent-ffmpeg, ffmpeg (system)
 - **Transcription**: OpenAI Whisper API (requires OPENAI_API_KEY)
 
@@ -64,11 +64,11 @@ assets/               # Images and icons
 ```
 
 ## Development
-- **Start (web)**: Metro runs on port 8080, Express proxy on port 5000
-- **Start backend**: `node server/index.js` (port 5000, proxies Metro on 8080)
+- **Start (web)**: `npx expo start --web --port 5000`
+- **Start backend**: `node server/index.js` (port 3001)
 - **Start (iOS)**: `npx expo start --ios`
 - **Export**: `npx expo export --platform web`
-- **Port**: 5000 (Express: API + proxy), 8080 (Metro bundler, internal)
+- **Port**: 5000 (Expo web), 3001 (video parser backend)
 - **Package Manager**: npm (with --legacy-peer-deps for install)
 
 ## Where to Add API Keys
@@ -77,7 +77,7 @@ All keys should be set as environment variables — never hardcoded in code:
 - `EXPO_PUBLIC_OPENAI_API_KEY` or `OPENAI_API_KEY` — for LLM-based recipe parsing (tried second) AND Whisper audio transcription (required for video)
 - `EXPO_PUBLIC_GEMINI_API_KEY` or `GEMINI_API_KEY` — for LLM-based recipe parsing (tried third)
 - `REVENUECAT_API_KEY` or `EXPO_PUBLIC_REVENUECAT_API_KEY` — for subscription management
-- `EXPO_PUBLIC_VIDEO_BACKEND_URL` — URL of the video parser backend (defaults to same-origin, i.e. empty string)
+- `EXPO_PUBLIC_VIDEO_BACKEND_URL` — URL of the video parser backend (defaults to http://localhost:3001)
 
 ## How Video Parsing Works
 1. Frontend sends video URL to POST /parse-video on the backend
@@ -98,4 +98,4 @@ All keys should be set as environment variables — never hardcoded in code:
 ## Deployment
 - Static export via `npx expo export --platform web`
 - Output directory: `dist/`
-- Backend serves both API and static export from port 5000
+- Backend must be deployed separately or combined with a reverse proxy for production

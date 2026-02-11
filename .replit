@@ -28,24 +28,24 @@ name = "Start application"
 author = "agent"
 
 [workflows.workflow.metadata]
-outputType = "console"
+outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd /home/runner/workspace && EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0 npx expo start --web --port 8080 --host lan"
-waitForPort = 8080
+args = "cd /home/runner/workspace && EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0 npx expo start --web --port 5000 --host lan"
+waitForPort = 5000
 
 [[workflows.workflow]]
 name = "Video Parser Backend"
 author = "agent"
 
 [workflows.workflow.metadata]
-outputType = "webview"
+outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd /home/runner/workspace && node server/index.js"
-waitForPort = 5000
+waitForPort = 3001
 
 [[ports]]
 localPort = 3001
@@ -54,6 +54,10 @@ externalPort = 3001
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 5001
+externalPort = 3000
 
 [deployment]
 deploymentTarget = "static"

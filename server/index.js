@@ -1,11 +1,11 @@
 const express = require('express');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const cors = require('cors');
 const { parseVideoToRecipe } = require('./parseVideo');
 
 const app = express();
-const PORT = 5000;
-const METRO_PORT = 8080;
+const PORT = process.env.VIDEO_BACKEND_PORT || 3001;
 
+app.use(cors());
 app.use(express.json());
 
 app.post('/parse-video', async (req, res) => {
@@ -30,16 +30,6 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.use(
-  '/',
-  createProxyMiddleware({
-    target: `http://127.0.0.1:${METRO_PORT}`,
-    changeOrigin: true,
-    ws: true,
-    logLevel: 'warn',
-  })
-);
-
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT} (proxying Metro on ${METRO_PORT})`);
+  console.log(`Video parser backend running on port ${PORT}`);
 });
