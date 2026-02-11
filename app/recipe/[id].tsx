@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   Modal,
+  Switch,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import {
@@ -43,6 +44,7 @@ export default function RecipeDetailScreen() {
   const [showCookAgainModal, setShowCookAgainModal] = useState(false);
   const [cookAgainIngredients, setCookAgainIngredients] = useState<Ingredient[]>([]);
   const [cookAgainDate, setCookAgainDate] = useState('');
+  const [cookAgainReminder, setCookAgainReminder] = useState(false);
 
   useEffect(() => {
     if (recipe) {
@@ -127,6 +129,7 @@ export default function RecipeDetailScreen() {
     setCookAgainIngredients(recipe.ingredients.map(i => ({ ...i })));
     const today = new Date().toISOString().split('T')[0];
     setCookAgainDate(today);
+    setCookAgainReminder(false);
     setShowCookAgainModal(true);
   };
 
@@ -135,6 +138,7 @@ export default function RecipeDetailScreen() {
     cookAgain(recipe.id, {
       ingredients: cookAgainIngredients,
       cookDate: cookAgainDate || undefined,
+      reminderEnabled: cookAgainReminder && !!cookAgainDate,
     });
     setShowCookAgainModal(false);
     Alert.alert('Cook Again!', 'Grocery list has been reset for this recipe.', [
@@ -194,10 +198,21 @@ export default function RecipeDetailScreen() {
         )}
 
         <View style={styles.content}>
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>
-              {recipe.status === 'cooked' ? '✓ Cooked' : 'Saved'}
-            </Text>
+          <View style={styles.statusRow}>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>
+                {recipe.status === 'cooked' ? '✓ Cooked' : 'Saved'}
+              </Text>
+            </View>
+            {!isEditing && recipe.status === 'cooked' && (
+              <TouchableOpacity
+                style={styles.cookAgainTopButton}
+                onPress={handleOpenCookAgain}
+              >
+                <RotateCcw size={16} color={Colors.white} />
+                <Text style={styles.cookAgainTopButtonText}>Cook Again</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {isEditing ? (
@@ -347,19 +362,6 @@ export default function RecipeDetailScreen() {
             </View>
           )}
 
-          {!isEditing && recipe.status === 'cooked' && (
-            <View style={styles.actionsSection}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.cookAgainButton]}
-                onPress={handleOpenCookAgain}
-              >
-                <RotateCcw size={20} color={Colors.white} />
-                <Text style={[styles.actionButtonText, styles.cookAgainButtonText]}>
-                  Cook Again
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       </ScrollView>
 
@@ -389,6 +391,22 @@ export default function RecipeDetailScreen() {
               placeholder="YYYY-MM-DD (leave empty to skip)"
               placeholderTextColor={Colors.textLight}
             />
+
+            <View style={styles.reminderToggleRow}>
+              <View>
+                <Text style={styles.reminderToggleLabel}>Remind me</Text>
+                <Text style={styles.reminderToggleHint}>
+                  {cookAgainDate ? 'Get a notification on cook day' : 'Set a date above to enable'}
+                </Text>
+              </View>
+              <Switch
+                value={cookAgainReminder}
+                onValueChange={setCookAgainReminder}
+                disabled={!cookAgainDate}
+                trackColor={{ false: Colors.border, true: Colors.primary }}
+                thumbColor={Colors.white}
+              />
+            </View>
 
             <View style={styles.modalSectionHeader}>
               <Text style={styles.modalSectionTitle}>Ingredients</Text>
@@ -695,12 +713,46 @@ const styles = StyleSheet.create({
   cookButtonText: {
     color: Colors.white,
   },
-  cookAgainButton: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  cookAgainButtonText: {
+  cookAgainTopButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  cookAgainTopButtonText: {
     color: Colors.white,
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  reminderToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  reminderToggleLabel: {
+    fontSize: 15,
+    fontWeight: '500' as const,
+    color: Colors.text,
+  },
+  reminderToggleHint: {
+    fontSize: 12,
+    color: Colors.textLight,
+    marginTop: 2,
   },
   modalContainer: {
     flex: 1,

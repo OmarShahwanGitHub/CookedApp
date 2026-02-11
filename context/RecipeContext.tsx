@@ -124,7 +124,7 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
     updateRecipe(id, { status: 'cooked' });
   }, [updateRecipe]);
 
-  const cookAgain = useCallback((id: string, updates?: { ingredients?: Ingredient[]; cookDate?: string }) => {
+  const cookAgain = useCallback((id: string, updates?: { ingredients?: Ingredient[]; cookDate?: string; reminderEnabled?: boolean }) => {
     const recipe = recipes.find(r => r.id === id);
     if (!recipe) return;
 
@@ -138,7 +138,7 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
       status: 'saved',
       ingredients: resetIngredients,
       cookDate: updates?.cookDate,
-      reminderEnabled: !!updates?.cookDate,
+      reminderEnabled: updates?.reminderEnabled ?? false,
     });
   }, [recipes, updateRecipe]);
 
