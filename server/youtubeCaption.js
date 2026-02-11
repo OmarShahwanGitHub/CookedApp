@@ -1,87 +1,102 @@
-const https = require('https');
-const http = require('http');
+const { execFile } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 async function fetchYouTubeCaptions(videoId) {
-  const pageHtml = await fetchUrl(`https://www.youtube.com/watch?v=${videoId}`);
+  const url = `https://www.youtube.com/watch?v=${videoId}`;
+  const tmpBase = path.join(os.tmpdir(), `yt-subs-${Date.now()}`);
 
-  const captionTrackPattern = /"captionTracks":\s*(\[.*?\])/;
-  const match = pageHtml.match(captionTrackPattern);
+  return new Promise((resolve, reject) => {
+    const args = [
+      '--skip-download',
+      '--write-auto-subs',
+      '--write-subs',
+      '--sub-lang', 'en',
+      '--sub-format', 'vtt',
+      '--convert-subs', 'vtt',
+      '-o', tmpBase,
+      url,
+    ];
 
-  if (!match) {
-    throw new Error('No caption tracks found for this video.');
-  }
+    execFile('yt-dlp', args, { timeout: 30000 }, (error, stdout, stderr) => {
+      const possibleFiles = [
+        `${tmpBase}.en.vtt`,
+        `${tmpBase}.en-orig.vtt`,
+      ];
 
-  let tracks;
-  try {
-    tracks = JSON.parse(match[1]);
-  } catch {
-    throw new Error('Failed to parse caption track data.');
-  }
+      let subtitleFile = null;
+      for (const f of possibleFiles) {
+        if (fs.existsSync(f)) {
+          subtitleFile = f;
+          break;
+        }
+      }
 
-  if (!tracks || tracks.length === 0) {
-    throw new Error('No caption tracks available.');
-  }
+      if (!subtitleFile) {
+        const dir = path.dirname(tmpBase);
+        const base = path.basename(tmpBase);
+        try {
+          const files = fs.readdirSync(dir);
+          const match = files.find(f => f.startsWith(base) && f.endsWith('.vtt'));
+          if (match) subtitleFile = path.join(dir, match);
+        } catch {}
+      }
 
-  let track = tracks.find(t => t.languageCode === 'en');
-  if (!track) {
-    track = tracks.find(t => t.languageCode && t.languageCode.startsWith('en'));
-  }
-  if (!track) {
-    track = tracks[0];
-  }
+      if (!subtitleFile) {
+        reject(new Error('No English captions or subtitles found.'));
+        return;
+      }
 
-  if (!track.baseUrl) {
-    throw new Error('Caption track has no URL.');
-  }
+      try {
+        const vttContent = fs.readFileSync(subtitleFile, 'utf-8');
+        const text = parseVtt(vttContent);
+        fs.unlinkSync(subtitleFile);
 
-  const captionUrl = track.baseUrl + '&fmt=srv3';
-  const captionXml = await fetchUrl(captionUrl);
+        if (!text || text.trim().length < 50) {
+          reject(new Error('Captions were empty.'));
+          return;
+        }
 
-  const textSegments = [];
-  const textPattern = /<text[^>]*>([\s\S]*?)<\/text>/g;
-  let textMatch;
-  while ((textMatch = textPattern.exec(captionXml)) !== null) {
-    let text = textMatch[1]
+        resolve(text);
+      } catch (err) {
+        try { fs.unlinkSync(subtitleFile); } catch {}
+        reject(err);
+      }
+    });
+  });
+}
+
+function parseVtt(vttContent) {
+  const lines = vttContent.split('\n');
+  const textLines = [];
+  const seen = new Set();
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (trimmed === 'WEBVTT') continue;
+    if (trimmed.startsWith('Kind:') || trimmed.startsWith('Language:')) continue;
+    if (trimmed.startsWith('NOTE')) continue;
+    if (/^\d{2}:\d{2}/.test(trimmed) && trimmed.includes('-->')) continue;
+    if (/^[\d:.]+\s*$/.test(trimmed)) continue;
+
+    const cleaned = trimmed
+      .replace(/<[^>]+>/g, '')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
-      .replace(/\n/g, ' ')
       .trim();
-    if (text) {
-      textSegments.push(text);
+
+    if (cleaned && !seen.has(cleaned)) {
+      seen.add(cleaned);
+      textLines.push(cleaned);
     }
   }
 
-  if (textSegments.length === 0) {
-    throw new Error('Captions were empty.');
-  }
-
-  return textSegments.join(' ');
-}
-
-function fetchUrl(url) {
-  return new Promise((resolve, reject) => {
-    const client = url.startsWith('https') ? https : http;
-    client.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return fetchUrl(res.headers.location).then(resolve).catch(reject);
-      }
-      if (res.statusCode !== 200) {
-        return reject(new Error(`HTTP ${res.statusCode}`));
-      }
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve(data));
-      res.on('error', reject);
-    }).on('error', reject);
-  });
+  return textLines.join(' ');
 }
 
 module.exports = { fetchYouTubeCaptions };
