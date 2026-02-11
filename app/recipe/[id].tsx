@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   Image,
+  Modal,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import {
@@ -18,6 +19,8 @@ import {
   Check,
   Edit3,
   ShoppingCart,
+  RotateCcw,
+  X,
 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useRecipes } from '@/context/RecipeContext';
@@ -28,7 +31,7 @@ import { generateId } from '@/utils/parseRecipe';
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { getRecipeById, updateRecipe, deleteRecipe, markAsCooked } = useRecipes();
+  const { getRecipeById, updateRecipe, deleteRecipe, markAsCooked, cookAgain } = useRecipes();
 
   const recipe = getRecipeById(id || '');
   const [isEditing, setIsEditing] = useState(false);
@@ -37,6 +40,9 @@ export default function RecipeDetailScreen() {
   const [category, setCategory] = useState<RecipeCategory>('other');
   const [cookDate, setCookDate] = useState('');
   const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [showCookAgainModal, setShowCookAgainModal] = useState(false);
+  const [cookAgainIngredients, setCookAgainIngredients] = useState<Ingredient[]>([]);
+  const [cookAgainDate, setCookAgainDate] = useState('');
 
   useEffect(() => {
     if (recipe) {
@@ -114,6 +120,44 @@ export default function RecipeDetailScreen() {
 
   const handleAddToGrocery = () => {
     router.push('/(tabs)/grocery');
+  };
+
+  const handleOpenCookAgain = () => {
+    if (!recipe) return;
+    setCookAgainIngredients(recipe.ingredients.map(i => ({ ...i })));
+    const today = new Date().toISOString().split('T')[0];
+    setCookAgainDate(today);
+    setShowCookAgainModal(true);
+  };
+
+  const handleConfirmCookAgain = () => {
+    if (!recipe) return;
+    cookAgain(recipe.id, {
+      ingredients: cookAgainIngredients,
+      cookDate: cookAgainDate || undefined,
+    });
+    setShowCookAgainModal(false);
+    Alert.alert('Cook Again!', 'Grocery list has been reset for this recipe.', [
+      { text: 'View Grocery List', onPress: () => router.push('/(tabs)/grocery') },
+      { text: 'OK' },
+    ]);
+  };
+
+  const handleCookAgainUpdateIngredient = (ingredientId: string, field: 'name' | 'quantity', value: string) => {
+    setCookAgainIngredients(prev =>
+      prev.map(i => (i.id === ingredientId ? { ...i, [field]: value } : i))
+    );
+  };
+
+  const handleCookAgainRemoveIngredient = (ingredientId: string) => {
+    setCookAgainIngredients(prev => prev.filter(i => i.id !== ingredientId));
+  };
+
+  const handleCookAgainAddIngredient = () => {
+    setCookAgainIngredients(prev => [
+      ...prev,
+      { id: generateId(), name: '', quantity: '', checked: false, alreadyHave: false },
+    ]);
   };
 
   return (
@@ -302,8 +346,82 @@ export default function RecipeDetailScreen() {
               </TouchableOpacity>
             </View>
           )}
+
+          {!isEditing && recipe.status === 'cooked' && (
+            <View style={styles.actionsSection}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.cookAgainButton]}
+                onPress={handleOpenCookAgain}
+              >
+                <RotateCcw size={20} color={Colors.white} />
+                <Text style={[styles.actionButtonText, styles.cookAgainButtonText]}>
+                  Cook Again
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showCookAgainModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCookAgainModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowCookAgainModal(false)}>
+              <X size={24} color={Colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Cook Again</Text>
+            <TouchableOpacity onPress={handleConfirmCookAgain}>
+              <Text style={styles.modalConfirmText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+            <Text style={styles.modalSectionTitle}>Schedule (optional)</Text>
+            <TextInput
+              style={styles.modalDateInput}
+              value={cookAgainDate}
+              onChangeText={setCookAgainDate}
+              placeholder="YYYY-MM-DD (leave empty to skip)"
+              placeholderTextColor={Colors.textLight}
+            />
+
+            <View style={styles.modalSectionHeader}>
+              <Text style={styles.modalSectionTitle}>Ingredients</Text>
+              <TouchableOpacity onPress={handleCookAgainAddIngredient}>
+                <Text style={styles.addText}>+ Add</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalHint}>Edit or remove ingredients before adding to grocery list</Text>
+
+            {cookAgainIngredients.map(ingredient => (
+              <View key={ingredient.id} style={styles.modalIngredientRow}>
+                <TextInput
+                  style={styles.modalQtyInput}
+                  value={ingredient.quantity}
+                  onChangeText={(v) => handleCookAgainUpdateIngredient(ingredient.id, 'quantity', v)}
+                  placeholder="Qty"
+                  placeholderTextColor={Colors.textLight}
+                />
+                <TextInput
+                  style={styles.modalNameInput}
+                  value={ingredient.name}
+                  onChangeText={(v) => handleCookAgainUpdateIngredient(ingredient.id, 'name', v)}
+                  placeholder="Ingredient"
+                  placeholderTextColor={Colors.textLight}
+                />
+                <TouchableOpacity onPress={() => handleCookAgainRemoveIngredient(ingredient.id)}>
+                  <Trash2 size={16} color={Colors.textLight} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -576,5 +694,93 @@ const styles = StyleSheet.create({
   },
   cookButtonText: {
     color: Colors.white,
+  },
+  cookAgainButton: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  cookAgainButtonText: {
+    color: Colors.white,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    paddingTop: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  modalConfirmText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.primary,
+  },
+  modalBody: {
+    flex: 1,
+    padding: 20,
+  },
+  modalSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    marginBottom: 10,
+  },
+  modalSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 10,
+  },
+  modalHint: {
+    fontSize: 13,
+    color: Colors.textLight,
+    marginBottom: 16,
+  },
+  modalDateInput: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    color: Colors.text,
+  },
+  modalIngredientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 10,
+  },
+  modalQtyInput: {
+    width: 70,
+    padding: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    fontSize: 14,
+    color: Colors.text,
+  },
+  modalNameInput: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    fontSize: 14,
+    color: Colors.text,
   },
 });

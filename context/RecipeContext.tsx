@@ -34,6 +34,7 @@ interface RecipeContextValue {
   toggleIngredientChecked: (recipeId: string, ingredientId: string) => void;
   toggleIngredientAlreadyHave: (recipeId: string, ingredientId: string) => void;
   markAsCooked: (id: string) => void;
+  cookAgain: (id: string, updates?: { ingredients?: Ingredient[]; cookDate?: string }) => void;
   getRecipeById: (id: string) => Recipe | undefined;
 }
 
@@ -123,6 +124,24 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
     updateRecipe(id, { status: 'cooked' });
   }, [updateRecipe]);
 
+  const cookAgain = useCallback((id: string, updates?: { ingredients?: Ingredient[]; cookDate?: string }) => {
+    const recipe = recipes.find(r => r.id === id);
+    if (!recipe) return;
+
+    const resetIngredients = (updates?.ingredients || recipe.ingredients).map(i => ({
+      ...i,
+      checked: false,
+      alreadyHave: false,
+    }));
+
+    updateRecipe(id, {
+      status: 'saved',
+      ingredients: resetIngredients,
+      cookDate: updates?.cookDate,
+      reminderEnabled: !!updates?.cookDate,
+    });
+  }, [recipes, updateRecipe]);
+
   const getRecipeById = useCallback((id: string) => {
     return recipes.find(r => r.id === id);
   }, [recipes]);
@@ -137,6 +156,7 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
     toggleIngredientChecked,
     toggleIngredientAlreadyHave,
     markAsCooked,
+    cookAgain,
     getRecipeById,
   }), [
     recipes,
@@ -148,6 +168,7 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
     toggleIngredientChecked,
     toggleIngredientAlreadyHave,
     markAsCooked,
+    cookAgain,
     getRecipeById,
   ]);
 
