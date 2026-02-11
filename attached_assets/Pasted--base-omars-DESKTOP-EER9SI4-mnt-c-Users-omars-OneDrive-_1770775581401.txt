@@ -1,0 +1,79 @@
+(base) omars@DESKTOP-EER9SI4:/mnt/c/Users/omars/OneDrive/Documents/CookedApp$ npx expo start --tunnel
+env: load .env
+env: export EXPO_PUBLIC_ANTHROPIC_API_KEY EXPO_PUBLIC_OPENAI_API_KEY EXPO_PUBLIC_GEMINI_API_KEY
+Starting project at /mnt/c/Users/omars/OneDrive/Documents/CookedApp
+Starting Metro Bundler
+Tunnel connected.
+Tunnel ready.
+CommandError: "expo-image-manipulator" is added as a dependency in your project's package.json but it doesn't seem to be installed. Run "npm install", or the equivalent for your package manager, and try again.
+(base) omars@DESKTOP-EER9SI4:/mnt/c/Users/omars/OneDrive/Documents/CookedApp$ npm install --legacy--peers
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: lucide-react-native@0.475.0
+npm error Found: react@19.1.0
+npm error node_modules/react
+npm error   react@"19.1.0" from the root project
+npm error   peerOptional react@"*" from @expo/devtools@0.1.8
+npm error   node_modules/@expo/devtools
+npm error     @expo/devtools@"0.1.8" from expo@54.0.33
+npm error     node_modules/expo
+npm error       expo@"~54.0.27" from the root project
+npm error       23 more (@expo/cli, @expo/metro-config, @expo/metro-runtime, ...)
+npm error   64 more (@expo/metro-runtime, @expo/vector-icons, ...)
+npm error
+npm error Could not resolve dependency:
+npm error peer react@"^16.5.1 || ^17.0.0 || ^18.0.0" from lucide-react-native@0.475.0
+npm error node_modules/lucide-react-native
+npm error   lucide-react-native@"^0.475.0" from the root project
+npm error
+npm error Conflicting peer dependency: react@18.3.1
+npm error node_modules/react
+npm error   peer react@"^16.5.1 || ^17.0.0 || ^18.0.0" from lucide-react-native@0.475.0
+npm error   node_modules/lucide-react-native
+npm error     lucide-react-native@"^0.475.0" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/omars/.npm/_logs/2026-02-11T02_05_49_226Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/omars/.npm/_logs/2026-02-11T02_05_49_226Z-debug-0.log
+(base) omars@DESKTOP-EER9SI4:/mnt/c/Users/omars/OneDrive/Documents/CookedApp$ npm install
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: lucide-react-native@0.475.0
+npm error Found: react@19.1.0
+npm error node_modules/react
+npm error   react@"19.1.0" from the root project
+npm error   peerOptional react@"*" from @expo/devtools@0.1.8
+npm error   node_modules/@expo/devtools
+npm error     @expo/devtools@"0.1.8" from expo@54.0.33
+npm error     node_modules/expo
+npm error       expo@"~54.0.27" from the root project
+npm error       23 more (@expo/cli, @expo/metro-config, @expo/metro-runtime, ...)
+npm error   64 more (@expo/metro-runtime, @expo/vector-icons, ...)
+npm error
+npm error Could not resolve dependency:
+npm error peer react@"^16.5.1 || ^17.0.0 || ^18.0.0" from lucide-react-native@0.475.0
+npm error node_modules/lucide-react-native
+npm error   lucide-react-native@"^0.475.0" from the root project
+npm error
+npm error Conflicting peer dependency: react@18.3.1
+npm error node_modules/react
+npm error   peer react@"^16.5.1 || ^17.0.0 || ^18.0.0" from lucide-react-native@0.475.0
+npm error   node_modules/lucide-react-native
+npm error     lucide-react-native@"^0.475.0" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/omars/.npm/_logs/2026-02-11T02_06_03_277Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/omars/.npm/_logs/2026-02-11T02_06_03_277Z-debug-0.log
+(base) omars@DESKTOP-EER9SI4:/mnt/c/Users/omars/OneDrive/Documents/CookedApp$ 
