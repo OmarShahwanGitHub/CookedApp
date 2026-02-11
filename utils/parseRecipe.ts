@@ -46,6 +46,7 @@ export async function parseRecipe(
 async function parseVideoViaBackend(url: string): Promise<ParsedRecipeData> {
   const backendUrl = getVideoBackendUrl();
   const endpoint = `${backendUrl}/parse-video`;
+  console.log('Video backend URL:', endpoint);
 
   const response = await fetch(endpoint, {
     method: 'POST',
