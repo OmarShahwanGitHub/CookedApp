@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Check, Package, ShoppingCart } from 'lucide-react-native';
+import { Check, Package, ShoppingCart, ChevronDown, ChevronRight } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useRecipes, useGroceryList } from '@/context/RecipeContext';
 import EmptyState from '@/components/EmptyState';
@@ -9,6 +9,7 @@ export default function GroceryScreen() {
   const groceryList = useGroceryList();
   const { toggleIngredientChecked, toggleIngredientAlreadyHave } = useRecipes();
   const [showAlreadyHave, setShowAlreadyHave] = useState(false);
+  const [expandedRecipes, setExpandedRecipes] = useState<Record<string, boolean>>({});
 
   const groupedByRecipe = useMemo(() => {
     const groups: Record<string, typeof groceryList> = {};
@@ -24,6 +25,13 @@ export default function GroceryScreen() {
   const needToBuy = groceryList.filter(i => !i.checked && !i.alreadyHave);
   const alreadyHaveItems = groceryList.filter(i => i.alreadyHave);
   const checkedItems = groceryList.filter(i => i.checked && !i.alreadyHave);
+
+  const toggleRecipeExpanded = (recipeId: string) => {
+    setExpandedRecipes(prev => ({
+      ...prev,
+      [recipeId]: !prev[recipeId],
+    }));
+  };
 
   if (groceryList.length === 0) {
     return (
@@ -63,11 +71,32 @@ export default function GroceryScreen() {
       {Object.entries(groupedByRecipe).map(([recipeId, items]) => {
         const recipeTitle = items[0]?.recipeTitle || 'Unknown Recipe';
         const activeItems = items.filter(i => !i.alreadyHave);
-        
+        const checkedCount = activeItems.filter(i => i.checked).length;
+        const isExpanded = expandedRecipes[recipeId] ?? false;
+
         return (
           <View key={recipeId} style={styles.recipeGroup}>
-            <Text style={styles.recipeTitle}>{recipeTitle}</Text>
-            {activeItems.map(item => (
+            <TouchableOpacity
+              style={styles.recipeHeader}
+              onPress={() => toggleRecipeExpanded(recipeId)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.recipeHeaderLeft}>
+                {isExpanded ? (
+                  <ChevronDown size={20} color={Colors.primary} />
+                ) : (
+                  <ChevronRight size={20} color={Colors.primary} />
+                )}
+                <Text style={styles.recipeTitle} numberOfLines={1}>{recipeTitle}</Text>
+              </View>
+              <View style={styles.recipeBadge}>
+                <Text style={styles.recipeBadgeText}>
+                  {checkedCount}/{activeItems.length}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {isExpanded && activeItems.map(item => (
               <View key={item.id} style={styles.ingredientRow}>
                 <TouchableOpacity
                   style={[styles.checkbox, item.checked && styles.checkboxChecked]}
@@ -76,7 +105,7 @@ export default function GroceryScreen() {
                 >
                   {item.checked && <Check size={14} color={Colors.white} />}
                 </TouchableOpacity>
-                
+
                 <View style={styles.ingredientInfo}>
                   <Text style={[styles.ingredientName, item.checked && styles.ingredientChecked]}>
                     {item.quantity ? `${item.quantity} ` : ''}{item.name}
@@ -166,15 +195,45 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   recipeGroup: {
-    marginBottom: 20,
+    marginBottom: 12,
+  },
+  recipeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  recipeHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 8,
   },
   recipeTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600' as const,
     color: Colors.primary,
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    flex: 1,
+  },
+  recipeBadge: {
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginLeft: 8,
+  },
+  recipeBadgeText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.textSecondary,
   },
   ingredientRow: {
     flexDirection: 'row',
@@ -182,7 +241,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 12,
     padding: 14,
-    marginBottom: 8,
+    marginBottom: 4,
+    marginLeft: 12,
   },
   checkbox: {
     width: 24,
@@ -242,6 +302,7 @@ const styles = StyleSheet.create({
   alreadyHaveRow: {
     backgroundColor: Colors.surfaceAlt,
     gap: 12,
+    marginLeft: 0,
   },
   alreadyHaveText: {
     flex: 1,
