@@ -1,5 +1,6 @@
 import { ParsedRecipeData } from '@/types/recipe';
 import { readAsStringAsync } from 'expo-file-system/legacy';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 const RECIPE_PARSE_PROMPT = `You are a recipe parser. Extract the following from the text below and return valid JSON only (no markdown, no explanation):
 
@@ -103,6 +104,52 @@ function detectMimeType(uri: string): string {
   return 'image/jpeg';
 }
 
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+
+async function compressImageIfNeeded(uri: string): Promise<{ uri: string; mimeType: string }> {
+  const base64Original = await readAsStringAsync(uri, { encoding: 'base64' });
+  const originalBytes = Math.ceil(base64Original.length * 0.75);
+
+  if (originalBytes <= MAX_IMAGE_BYTES) {
+    console.log(`Image already under limit: ${(originalBytes / 1024 / 1024).toFixed(1)}MB`);
+    return { uri, mimeType: detectMimeType(uri) };
+  }
+
+  console.log(`Image needs compression: ${(originalBytes / 1024 / 1024).toFixed(1)}MB`);
+
+  const attempts: [number, number][] = [
+    [1600, 0.7],
+    [1200, 0.6],
+    [1000, 0.5],
+    [800, 0.4],
+    [600, 0.3],
+  ];
+
+  for (const [width, quality] of attempts) {
+    const result = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width } }],
+      { compress: quality, format: ImageManipulator.SaveFormat.JPEG }
+    );
+
+    const base64 = await readAsStringAsync(result.uri, { encoding: 'base64' });
+    const byteSize = Math.ceil(base64.length * 0.75);
+
+    if (byteSize <= MAX_IMAGE_BYTES) {
+      console.log(`Image compressed to ${(byteSize / 1024 / 1024).toFixed(1)}MB (width: ${width}, quality: ${quality})`);
+      return { uri: result.uri, mimeType: 'image/jpeg' };
+    }
+  }
+
+  const lastResort = await ImageManipulator.manipulateAsync(
+    uri,
+    [{ resize: { width: 400 } }],
+    { compress: 0.2, format: ImageManipulator.SaveFormat.JPEG }
+  );
+  console.log('Image compressed with last resort settings');
+  return { uri: lastResort.uri, mimeType: 'image/jpeg' };
+}
+
 export async function parseRecipeFromImages(imageUris: string[]): Promise<ParsedRecipeData> {
   const maxImages = 5;
   const urisToProcess = imageUris.slice(0, maxImages);
@@ -110,21 +157,18 @@ export async function parseRecipeFromImages(imageUris: string[]): Promise<Parsed
   const images: ImageData[] = [];
   for (const uri of urisToProcess) {
     try {
-      const base64 = await readAsStringAsync(uri, {
+      const compressed = await compressImageIfNeeded(uri);
+      const base64 = await readAsStringAsync(compressed.uri, {
         encoding: 'base64',
       });
 
-      if (base64.length > 10 * 1024 * 1024) {
-        console.warn(`Image too large, skipping: ${uri}`);
-        continue;
-      }
-
       images.push({
         base64,
-        mimeType: detectMimeType(uri),
+        mimeType: compressed.mimeType,
       });
+      console.log(`Image processed: ${(Math.ceil(base64.length * 0.75) / 1024 / 1024).toFixed(1)}MB`);
     } catch (error) {
-      console.warn(`Failed to read image: ${uri}`, error);
+      console.warn(`Failed to process image: ${uri}`, error);
     }
   }
 
