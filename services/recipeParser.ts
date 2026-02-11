@@ -107,17 +107,25 @@ function detectMimeType(uri: string): string {
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
 async function compressImageIfNeeded(uri: string): Promise<{ uri: string; mimeType: string }> {
+  const originalMime = detectMimeType(uri);
+  const needsConversion = originalMime !== 'image/jpeg' && originalMime !== 'image/png';
+
   const base64Original = await readAsStringAsync(uri, { encoding: 'base64' });
   const originalBytes = Math.ceil(base64Original.length * 0.75);
+  console.log(`Original image: ${(originalBytes / 1024 / 1024).toFixed(1)}MB, type: ${originalMime}`);
 
-  if (originalBytes <= MAX_IMAGE_BYTES) {
-    console.log(`Image already under limit: ${(originalBytes / 1024 / 1024).toFixed(1)}MB`);
-    return { uri, mimeType: detectMimeType(uri) };
+  if (originalBytes <= MAX_IMAGE_BYTES && !needsConversion) {
+    const normalized = await ImageManipulator.manipulateAsync(
+      uri,
+      [],
+      { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    console.log(`Image normalized to JPEG`);
+    return { uri: normalized.uri, mimeType: 'image/jpeg' };
   }
 
-  console.log(`Image needs compression: ${(originalBytes / 1024 / 1024).toFixed(1)}MB`);
-
   const attempts: [number, number][] = [
+    [2048, 0.8],
     [1600, 0.7],
     [1200, 0.6],
     [1000, 0.5],
