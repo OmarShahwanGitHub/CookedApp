@@ -104,24 +104,27 @@ function detectMimeType(uri: string): string {
   return 'image/jpeg';
 }
 
-const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_BASE64_LENGTH = 5 * 1024 * 1024;
 
 async function compressImageIfNeeded(uri: string): Promise<{ uri: string; mimeType: string }> {
   const originalMime = detectMimeType(uri);
   const needsConversion = originalMime !== 'image/jpeg' && originalMime !== 'image/png';
 
   const base64Original = await readAsStringAsync(uri, { encoding: 'base64' });
-  const originalBytes = Math.ceil(base64Original.length * 0.75);
-  console.log(`Original image: ${(originalBytes / 1024 / 1024).toFixed(1)}MB, type: ${originalMime}`);
+  console.log(`Original image: ${(base64Original.length / 1024 / 1024).toFixed(1)}MB base64, type: ${originalMime}`);
 
-  if (originalBytes <= MAX_IMAGE_BYTES && !needsConversion) {
+  if (base64Original.length <= MAX_BASE64_LENGTH && !needsConversion) {
     const normalized = await ImageManipulator.manipulateAsync(
       uri,
       [],
       { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
     );
-    console.log(`Image normalized to JPEG`);
-    return { uri: normalized.uri, mimeType: 'image/jpeg' };
+    const normBase64 = await readAsStringAsync(normalized.uri, { encoding: 'base64' });
+    if (normBase64.length <= MAX_BASE64_LENGTH) {
+      console.log(`Image normalized to JPEG: ${(normBase64.length / 1024 / 1024).toFixed(1)}MB base64`);
+      return { uri: normalized.uri, mimeType: 'image/jpeg' };
+    }
+    console.log(`Normalized image still too large (${(normBase64.length / 1024 / 1024).toFixed(1)}MB base64), compressing further`);
   }
 
   const attempts: [number, number][] = [
@@ -141,10 +144,9 @@ async function compressImageIfNeeded(uri: string): Promise<{ uri: string; mimeTy
     );
 
     const base64 = await readAsStringAsync(result.uri, { encoding: 'base64' });
-    const byteSize = Math.ceil(base64.length * 0.75);
 
-    if (byteSize <= MAX_IMAGE_BYTES) {
-      console.log(`Image compressed to ${(byteSize / 1024 / 1024).toFixed(1)}MB (width: ${width}, quality: ${quality})`);
+    if (base64.length <= MAX_BASE64_LENGTH) {
+      console.log(`Image compressed to ${(base64.length / 1024 / 1024).toFixed(1)}MB base64 (width: ${width}, quality: ${quality})`);
       return { uri: result.uri, mimeType: 'image/jpeg' };
     }
   }
@@ -174,7 +176,7 @@ export async function parseRecipeFromImages(imageUris: string[]): Promise<Parsed
         base64,
         mimeType: compressed.mimeType,
       });
-      console.log(`Image processed: ${(Math.ceil(base64.length * 0.75) / 1024 / 1024).toFixed(1)}MB`);
+      console.log(`Image processed: ${(base64.length / 1024 / 1024).toFixed(1)}MB base64`);
     } catch (error) {
       console.warn(`Failed to process image: ${uri}`, error);
     }
