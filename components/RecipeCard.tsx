@@ -44,7 +44,7 @@ export default function RecipeCard({ recipe, onPress }: RecipeCardProps) {
             <View style={styles.dateContainer}>
               <Clock size={12} color={Colors.textLight} />
               <Text style={styles.date}>
-                {new Date(recipe.cookDate).toLocaleDateString()}
+                {new Date(recipe.cookDate + 'T00:00:00').toLocaleDateString()}
               </Text>
             </View>
           )}

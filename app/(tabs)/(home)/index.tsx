@@ -18,7 +18,7 @@ export default function HomeScreen() {
   ).slice(0, 4);
 
   const upcomingRecipes = savedRecipes.filter(r => r.cookDate).sort((a, b) => 
-    new Date(a.cookDate!).getTime() - new Date(b.cookDate!).getTime()
+    new Date(a.cookDate! + 'T00:00:00').getTime() - new Date(b.cookDate! + 'T00:00:00').getTime()
   ).slice(0, 3);
 
   const handleAddRecipe = () => {
@@ -82,7 +82,7 @@ export default function HomeScreen() {
                     onPress={() => handleRecipePress(recipe.id)}
                   >
                     <Text style={styles.upcomingDate}>
-                      {new Date(recipe.cookDate!).toLocaleDateString('en-US', {
+                      {new Date(recipe.cookDate! + 'T00:00:00').toLocaleDateString('en-US', {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',

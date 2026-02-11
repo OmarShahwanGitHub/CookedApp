@@ -260,7 +260,7 @@ export default function RecipeDetailScreen() {
                 <View style={styles.dateContainer}>
                   <Calendar size={14} color={Colors.textSecondary} />
                   <Text style={styles.dateText}>
-                    {new Date(recipe.cookDate).toLocaleDateString()}
+                    {new Date(recipe.cookDate + 'T00:00:00').toLocaleDateString()}
                   </Text>
                 </View>
               )}

@@ -28,7 +28,7 @@ export async function scheduleRecipeReminder(
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return null;
 
-    const triggerDate = new Date(cookDate);
+    const triggerDate = new Date(cookDate + 'T00:00:00');
     triggerDate.setHours(9, 0, 0, 0);
 
     if (triggerDate.getTime() <= Date.now()) {
