@@ -1,4 +1,4 @@
-const ytdl = require('@distube/ytdl-core');
+const { execFile } = require('child_process');
 const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const path = require('path');
@@ -119,36 +119,54 @@ function extractYouTubeAudio(url) {
   return new Promise((resolve, reject) => {
     const tmpFile = path.join(os.tmpdir(), `yt-audio-${Date.now()}.mp3`);
 
-    const stream = ytdl(url, {
-      filter: 'audioonly',
-      quality: 'lowestaudio',
-    });
+    const args = [
+      '--no-playlist',
+      '-x',
+      '--audio-format', 'mp3',
+      '--audio-quality', '9',
+      '--max-filesize', '25m',
+      '--socket-timeout', '30',
+      '-o', tmpFile,
+      url,
+    ];
 
-    stream.on('error', (err) => {
-      cleanupFile(tmpFile);
-      if (err.message.includes('private') || err.message.includes('unavailable')) {
-        const e = new Error('This video is private or unavailable.');
-        e.statusCode = 403;
-        reject(e);
-      } else {
-        reject(new Error(`Failed to download YouTube audio: ${err.message}`));
-      }
-    });
-
-    const ffmpegProcess = ffmpeg(stream)
-      .audioCodec('libmp3lame')
-      .audioBitrate(64)
-      .audioChannels(1)
-      .audioFrequency(16000)
-      .duration(600)
-      .format('mp3')
-      .on('end', () => resolve(tmpFile))
-      .on('error', (err) => {
+    console.log('Downloading audio with yt-dlp...');
+    execFile('yt-dlp', args, { timeout: 120000 }, (error, stdout, stderr) => {
+      if (error) {
         cleanupFile(tmpFile);
-        reject(new Error(`Audio conversion failed: ${err.message}`));
-      })
-      .save(tmpFile);
+        if (stderr && (stderr.includes('Private') || stderr.includes('unavailable'))) {
+          const e = new Error('This video is private or unavailable.');
+          e.statusCode = 403;
+          reject(e);
+        } else {
+          reject(new Error(`Failed to download YouTube audio: ${error.message}`));
+        }
+        return;
+      }
+
+      const actualFile = findOutputFile(tmpFile);
+      if (!actualFile) {
+        reject(new Error('Audio download completed but output file was not found.'));
+        return;
+      }
+
+      console.log(`Audio downloaded: ${actualFile}`);
+      resolve(actualFile);
+    });
   });
+}
+
+function findOutputFile(basePath) {
+  if (fs.existsSync(basePath)) return basePath;
+
+  const dir = path.dirname(basePath);
+  const base = path.basename(basePath, path.extname(basePath));
+  const possibleExts = ['.mp3', '.m4a', '.webm', '.opus', '.ogg'];
+  for (const ext of possibleExts) {
+    const candidate = path.join(dir, base + ext);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
 }
 
 function extractGenericAudio(url) {

@@ -27,7 +27,7 @@ A recipe management app built with Expo (React Native for Web/iOS) and expo-rout
 - **Build Tool**: Metro bundler (standard Expo config)
 - **Subscriptions**: RevenueCat (react-native-purchases)
 - **Notifications**: expo-notifications (local only)
-- **Video Processing**: Metro custom middleware + @distube/ytdl-core, fluent-ffmpeg, ffmpeg (system)
+- **Video Processing**: Metro custom middleware + yt-dlp (system), fluent-ffmpeg, ffmpeg (system)
 - **Transcription**: OpenAI Whisper API (requires OPENAI_API_KEY)
 - **Backend**: Video parsing runs as Metro middleware (dev) or standalone Express server (production)
 
