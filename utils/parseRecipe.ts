@@ -2,7 +2,7 @@ import { ParsedRecipeData } from '@/types/recipe';
 import { normalizeInputToText, InputType } from '@/services/inputNormalizer';
 import { parseRecipeFromText as parseWithService, parseRecipeFromImages } from '@/services/recipeParser';
 
-const VIDEO_BACKEND_URL = process.env.EXPO_PUBLIC_VIDEO_BACKEND_URL || 'http://localhost:3001';
+const VIDEO_BACKEND_URL = process.env.EXPO_PUBLIC_VIDEO_BACKEND_URL || '';
 
 export async function parseRecipe(
   input: string | string[],
