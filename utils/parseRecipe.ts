@@ -2,6 +2,8 @@ import { ParsedRecipeData } from '@/types/recipe';
 import { normalizeInputToText, InputType } from '@/services/inputNormalizer';
 import { parseRecipeFromText as parseWithService, parseRecipeFromImages } from '@/services/recipeParser';
 
+const VIDEO_BACKEND_URL = process.env.EXPO_PUBLIC_VIDEO_BACKEND_URL || 'http://localhost:3001';
+
 export async function parseRecipe(
   input: string | string[],
   inputType: InputType
@@ -9,6 +11,10 @@ export async function parseRecipe(
   if (inputType === 'image') {
     const imageUris = Array.isArray(input) ? input : [input];
     return parseRecipeFromImages(imageUris);
+  }
+
+  if (inputType === 'video') {
+    return parseVideoViaBackend(input as string);
   }
 
   const normalized = await normalizeInputToText(input, inputType);
@@ -23,6 +29,26 @@ export async function parseRecipe(
   }
 
   return parseWithService(normalized.text);
+}
+
+async function parseVideoViaBackend(url: string): Promise<ParsedRecipeData> {
+  const response = await fetch(`${VIDEO_BACKEND_URL}/parse-video`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+
+  if (!response.ok) {
+    let errorMsg = 'Failed to parse video.';
+    try {
+      const errBody = await response.json();
+      errorMsg = errBody.error || errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+
+  const data = await response.json();
+  return data.recipe;
 }
 
 export { parseRecipeFromText } from '@/services/recipeParser';

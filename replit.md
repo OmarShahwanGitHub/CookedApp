@@ -1,9 +1,12 @@
 # Cooked Recipe App
 
 ## Overview
-A recipe management app built with Expo (React Native for Web/iOS) and expo-router. Users can browse, add, and manage recipes across Home, Grocery, and Library tabs. Supports recipe input via pasted text, URLs, images (OCR stub), and video (transcription stub). Includes RevenueCat paywall integration (10 free recipes, subscription unlocks unlimited).
+A recipe management app built with Expo (React Native for Web/iOS) and expo-router. Users can browse, add, and manage recipes across Home, Grocery, and Library tabs. Supports recipe input via pasted text, URLs, images (AI vision), and video (YouTube captions + audio transcription via backend). Includes RevenueCat paywall integration (10 free recipes, subscription unlocks unlimited).
 
 ## Recent Changes
+- 2026-02-11: Added Node.js backend (Express) for video-to-recipe parsing with YouTube caption extraction, audio transcription (OpenAI Whisper), and multi-provider recipe parsing fallback. Frontend video input now calls the backend directly.
+- 2026-02-11: "Cook Again" button moved to top of recipe detail, added reminder toggle (defaults off) in Cook Again modal.
+- 2026-02-11: Fixed timezone bug causing dates to display one day behind across all date displays.
 - 2026-02-10: Major refactor — removed @rork-ai/toolkit-sdk, cleaned up dependencies, implemented unified recipe parsing pipeline, added RevenueCat subscription service, local notifications, paywall screen, and video input mode.
 - 2026-02-10: Initial import and Replit environment setup.
 
@@ -12,6 +15,8 @@ A recipe management app built with Expo (React Native for Web/iOS) and expo-rout
 - iOS-focused (Expo Go / TestFlight-ready)
 - No web-only or Node-only APIs
 - No social features, public feeds, or ebook uploads
+- No Replit-managed AI services — all AI providers handled manually via environment variables
+- AI provider fallback hierarchy: Anthropic → OpenAI → Gemini
 
 ## Project Architecture
 - **Framework**: Expo SDK 54 with React Native Web
@@ -22,6 +27,9 @@ A recipe management app built with Expo (React Native for Web/iOS) and expo-rout
 - **Build Tool**: Metro bundler (standard Expo config)
 - **Subscriptions**: RevenueCat (react-native-purchases)
 - **Notifications**: expo-notifications (local only)
+- **Backend**: Node.js Express server for video parsing (port 3001)
+- **Video Processing**: @distube/ytdl-core, fluent-ffmpeg, ffmpeg (system)
+- **Transcription**: OpenAI Whisper API (requires OPENAI_API_KEY)
 
 ## Project Structure
 ```
@@ -44,6 +52,12 @@ services/             # Service layer
   recipeParser.ts     # LLM-based recipe parsing (with fallback)
   notificationService.ts  # Local notification scheduling
   subscriptionService.ts  # RevenueCat integration
+server/               # Backend server (Express)
+  index.js            # Express app entry point (port 3001)
+  parseVideo.js       # Video URL → recipe orchestrator
+  youtubeCaption.js   # YouTube caption/transcript fetcher
+  transcribe.js       # OpenAI Whisper audio transcription
+  recipeParse.js      # Server-side recipe parsing (Anthropic → OpenAI → Gemini)
 types/                # TypeScript type definitions
 utils/                # Utility functions
 assets/               # Images and icons
@@ -51,19 +65,28 @@ assets/               # Images and icons
 
 ## Development
 - **Start (web)**: `EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0 npx expo start --web --port 5000 --host lan`
+- **Start backend**: `node server/index.js` (port 3001)
 - **Start (iOS)**: `npx expo start --ios`
 - **Export**: `npx expo export --platform web`
-- **Port**: 5000 (web)
+- **Port**: 5000 (web frontend), 3001 (video parser backend)
 - **Package Manager**: npm (with --legacy-peer-deps for install)
 
 ## Where to Add API Keys
 All keys should be set as environment variables — never hardcoded in code:
-- `EXPO_PUBLIC_ANTHROPIC_API_KEY` — for LLM-based recipe parsing (tried first)
-- `EXPO_PUBLIC_OPENAI_API_KEY` — for LLM-based recipe parsing (tried second)
-- `EXPO_PUBLIC_GEMINI_API_KEY` — for LLM-based recipe parsing (tried third)
+- `EXPO_PUBLIC_ANTHROPIC_API_KEY` or `ANTHROPIC_API_KEY` — for LLM-based recipe parsing (tried first)
+- `EXPO_PUBLIC_OPENAI_API_KEY` or `OPENAI_API_KEY` — for LLM-based recipe parsing (tried second) AND Whisper audio transcription (required for video)
+- `EXPO_PUBLIC_GEMINI_API_KEY` or `GEMINI_API_KEY` — for LLM-based recipe parsing (tried third)
 - `REVENUECAT_API_KEY` or `EXPO_PUBLIC_REVENUECAT_API_KEY` — for subscription management
-- `OCR_API_KEY` — for image-to-text extraction (stub, not yet implemented)
-- `TRANSCRIPTION_API_KEY` — for video-to-text transcription (stub, not yet implemented)
+- `EXPO_PUBLIC_VIDEO_BACKEND_URL` — URL of the video parser backend (defaults to http://localhost:3001)
+
+## How Video Parsing Works
+1. Frontend sends video URL to POST /parse-video on the backend
+2. Backend detects platform (YouTube vs other)
+3. For YouTube: tries to fetch existing captions first, falls back to audio extraction
+4. For non-YouTube: extracts audio directly via ffmpeg
+5. Audio is transcribed using OpenAI Whisper API
+6. Transcript is parsed into structured recipe JSON using AI provider fallback (Anthropic → OpenAI → Gemini)
+7. Temp audio files are cleaned up immediately after processing
 
 ## How Monetization Works
 - Free tier: 10 saved recipes max
@@ -75,3 +98,4 @@ All keys should be set as environment variables — never hardcoded in code:
 ## Deployment
 - Static export via `npx expo export --platform web`
 - Output directory: `dist/`
+- Backend must be deployed separately (Express server on port 3001)
