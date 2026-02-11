@@ -1,8 +1,20 @@
 import { ParsedRecipeData } from '@/types/recipe';
 import { normalizeInputToText, InputType } from '@/services/inputNormalizer';
 import { parseRecipeFromText as parseWithService, parseRecipeFromImages } from '@/services/recipeParser';
+import Constants from 'expo-constants';
 
-const VIDEO_BACKEND_URL = process.env.EXPO_PUBLIC_VIDEO_BACKEND_URL || 'http://localhost:3001';
+function getVideoBackendUrl(): string {
+  const configured = process.env.EXPO_PUBLIC_VIDEO_BACKEND_URL;
+  if (configured) return configured;
+
+  const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost || Constants.manifest?.debuggerHost;
+  if (debuggerHost) {
+    const lanIp = debuggerHost.split(':')[0];
+    return `http://${lanIp}:3001`;
+  }
+
+  return 'http://localhost:3001';
+}
 
 export async function parseRecipe(
   input: string | string[],
@@ -32,7 +44,7 @@ export async function parseRecipe(
 }
 
 async function parseVideoViaBackend(url: string): Promise<ParsedRecipeData> {
-  const backendUrl = VIDEO_BACKEND_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  const backendUrl = getVideoBackendUrl();
   const endpoint = `${backendUrl}/parse-video`;
 
   const response = await fetch(endpoint, {
