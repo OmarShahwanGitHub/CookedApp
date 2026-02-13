@@ -8,6 +8,7 @@ import {
   restorePurchases,
   getRecipeLimit,
   isRevenueCatConfigured,
+  getLastOfferingsDebug,
 } from '@/services/subscriptionService';
 
 interface PaywallScreenProps {
@@ -26,12 +27,15 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
     loadOfferings();
   }, []);
 
+  const [offeringsDebug, setOfferingsDebug] = useState('');
+
   const loadOfferings = async () => {
     try {
       const packages = await getOfferings();
       setOfferings(packages);
+      setOfferingsDebug(getLastOfferingsDebug());
     } catch (error) {
-      console.error('Failed to load offerings:', error);
+      setOfferingsDebug(getLastOfferingsDebug() || 'Failed to load offerings.');
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +140,9 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
                 ? 'No subscription plans are available yet. Create products in App Store Connect, add them to an offering in the RevenueCat dashboard, and ensure your app bundle ID matches.'
                 : 'Add EXPO_PUBLIC_REVENUECAT_API_KEY to your .env (local) or EAS environment variables (production) to enable purchases.'}
             </Text>
+            {offeringsDebug ? (
+              <Text style={styles.debugText}>{offeringsDebug}</Text>
+            ) : null}
           </View>
         )}
 
@@ -253,6 +260,14 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  debugText: {
+    fontSize: 12,
+    color: Colors.textLight,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: 12,
+    fontStyle: 'italic',
   },
   restoreButton: {
     padding: 16,

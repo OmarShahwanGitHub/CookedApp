@@ -100,10 +100,17 @@ export async function canAddRecipe(currentRecipeCount: number): Promise<boolean>
   return currentRecipeCount < FREE_RECIPE_LIMIT;
 }
 
+let lastOfferingsDebug: string = '';
+
+export function getLastOfferingsDebug(): string {
+  return lastOfferingsDebug;
+}
+
 export async function getOfferings(): Promise<any[]> {
   const purchases = await getPurchases();
   if (!purchases) {
-    console.warn('[RevenueCat] getOfferings: Purchases module not available');
+    lastOfferingsDebug = 'Purchases module not available (e.g. web or missing native module).';
+    console.warn('[RevenueCat] getOfferings:', lastOfferingsDebug);
     return [];
   }
 
@@ -113,18 +120,22 @@ export async function getOfferings(): Promise<any[]> {
     const packageCount = offerings?.current?.availablePackages?.length ?? 0;
     const allIds = offerings?.all ? Object.keys(offerings.all) : [];
     console.log('[RevenueCat] getOfferings: current=', hasCurrent, 'packages=', packageCount, 'offeringIds=', allIds);
-    if (!hasCurrent && allIds.length > 0) {
-      console.warn('[RevenueCat] No offering is set as Current. In RevenueCat dashboard → Offerings → set one as "Current".');
-    }
-    if (hasCurrent && packageCount === 0) {
-      console.warn('[RevenueCat] Current offering has 0 packages. Add a package (with a product) to the current offering.');
-    }
+
     if (offerings?.current) {
+      lastOfferingsDebug = packageCount > 0 ? '' : `Current offering has 0 packages. Add a package in RevenueCat → default → Packages.`;
       return offerings.current.availablePackages;
+    }
+
+    if (allIds.length > 0) {
+      lastOfferingsDebug = 'No offering is set as Current. In RevenueCat → Offerings → set "default" as Current (checkmark).';
+    } else {
+      lastOfferingsDebug = 'No offerings from RevenueCat. Check App Store Connect API Key in RevenueCat Project Settings, and product com.cooked.recipe.pro_monthly in App Store Connect.';
     }
     return [];
   } catch (error: any) {
-    console.error('[RevenueCat] getOfferings failed:', error?.message ?? error);
+    const msg = error?.message ?? String(error);
+    lastOfferingsDebug = `RevenueCat error: ${msg}`;
+    console.error('[RevenueCat] getOfferings failed:', msg);
     return [];
   }
 }
