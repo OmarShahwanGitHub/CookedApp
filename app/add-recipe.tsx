@@ -409,27 +409,30 @@ export default function AddRecipeScreen() {
             <Text style={styles.addText}>+ Add</Text>
           </TouchableOpacity>
         </View>
-        {ingredients.map((ingredient, index) => (
+        {ingredients.map((ingredient) => (
           <View key={ingredient.id} style={styles.ingredientRow}>
-            <TextInput
-              style={styles.quantityInput}
-              value={ingredient.quantity}
-              onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'quantity', v)}
-              placeholder="Qty"
-              placeholderTextColor={Colors.textLight}
-            />
-            <TextInput
-              style={styles.ingredientInput}
-              value={ingredient.name}
-              onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'name', v)}
-              placeholder="Ingredient name"
-              placeholderTextColor={Colors.textLight}
-            />
+            <View style={styles.ingredientCard}>
+              <TextInput
+                style={styles.ingredientCardQty}
+                value={ingredient.quantity}
+                onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'quantity', v)}
+                placeholder="Qty"
+                placeholderTextColor={Colors.textLight}
+              />
+              <TextInput
+                style={styles.ingredientCardName}
+                value={ingredient.name}
+                onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'name', v)}
+                placeholder="Ingredient"
+                placeholderTextColor={Colors.textLight}
+              />
+            </View>
             <TouchableOpacity
               style={styles.removeButton}
               onPress={() => handleRemoveIngredient(ingredient.id)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <Trash2 size={16} color={Colors.textLight} />
+              <Trash2 size={18} color={Colors.textLight} />
             </TouchableOpacity>
           </View>
         ))}
@@ -728,28 +731,34 @@ const styles = StyleSheet.create({
   ingredientRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
+    gap: 10,
+  },
+  ingredientCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 14,
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: Colors.border,
     gap: 8,
   },
-  quantityInput: {
-    width: 70,
-    backgroundColor: Colors.surface,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
+  ingredientCardQty: {
+    fontSize: 15,
     color: Colors.text,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    paddingVertical: 10,
+    minWidth: 48,
+    maxWidth: 100,
   },
-  ingredientInput: {
+  ingredientCardName: {
     flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.text,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    paddingVertical: 10,
   },
   removeButton: {
     padding: 8,

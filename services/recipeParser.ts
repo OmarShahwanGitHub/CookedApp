@@ -62,31 +62,49 @@ const PROVIDERS: ProviderConfig[] = [
   { name: 'Gemini', envKey: 'GEMINI_API_KEY', callText: callGeminiText, callVision: callGeminiVision },
 ];
 
-function getEnvVar(key: string): string | null {
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env[`EXPO_PUBLIC_${key}`] || process.env[key] || null;
+// Expo only inlines EXPO_PUBLIC_* when using static dot notation. Dynamic keys are not inlined.
+function getApiKeyForProvider(envKey: string): string | null {
+  if (typeof process === 'undefined' || !process.env) return null;
+  switch (envKey) {
+    case 'ANTHROPIC_API_KEY':
+      return process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY || null;
+    case 'OPENAI_API_KEY':
+      return process.env.EXPO_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY || null;
+    case 'GEMINI_API_KEY':
+      return process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY || null;
+    default:
+      return null;
   }
-  return null;
 }
 
 export async function parseRecipeFromText(text: string): Promise<ParsedRecipeData> {
   const prompt = RECIPE_PARSE_PROMPT + text;
 
+  const keysStatus = {
+    Anthropic: !!getApiKeyForProvider('ANTHROPIC_API_KEY'),
+    OpenAI: !!getApiKeyForProvider('OPENAI_API_KEY'),
+    Gemini: !!getApiKeyForProvider('GEMINI_API_KEY'),
+  };
+  console.log('[RecipeParser] API keys present:', keysStatus);
+
   for (const provider of PROVIDERS) {
-    const apiKey = getEnvVar(provider.envKey);
-    if (!apiKey) continue;
+    const apiKey = getApiKeyForProvider(provider.envKey);
+    if (!apiKey) {
+      console.log(`[RecipeParser] Skipping ${provider.name} (no key)`);
+      continue;
+    }
 
     try {
-      console.log(`Trying recipe parsing with ${provider.name}...`);
+      console.log(`[RecipeParser] Trying ${provider.name}...`);
       const result = await provider.callText(prompt, apiKey);
-      console.log(`Successfully parsed recipe with ${provider.name}`);
+      console.log(`[RecipeParser] Success with ${provider.name}`);
       return result;
     } catch (error) {
-      console.warn(`${provider.name} parsing failed, trying next provider:`, error);
+      console.warn(`[RecipeParser] ${provider.name} failed:`, error);
     }
   }
 
-  console.log('No LLM providers available or all failed, using basic parser');
+  console.log('[RecipeParser] No LLM available or all failed, using basic parser');
   return parseWithBasicParser(text);
 }
 
@@ -186,17 +204,24 @@ export async function parseRecipeFromImages(imageUris: string[]): Promise<Parsed
     throw new Error('Could not read any of the selected images. Please try selecting different images.');
   }
 
+  const keysStatus = {
+    Anthropic: !!getApiKeyForProvider('ANTHROPIC_API_KEY'),
+    OpenAI: !!getApiKeyForProvider('OPENAI_API_KEY'),
+    Gemini: !!getApiKeyForProvider('GEMINI_API_KEY'),
+  };
+  console.log('[RecipeParser] API keys present (images):', keysStatus);
+
   for (const provider of PROVIDERS) {
-    const apiKey = getEnvVar(provider.envKey);
+    const apiKey = getApiKeyForProvider(provider.envKey);
     if (!apiKey) continue;
 
     try {
-      console.log(`Trying image parsing with ${provider.name}...`);
+      console.log(`[RecipeParser] Trying image parsing with ${provider.name}...`);
       const result = await provider.callVision(images, apiKey);
-      console.log(`Successfully parsed recipe images with ${provider.name}`);
+      console.log(`[RecipeParser] Success with ${provider.name}`);
       return result;
     } catch (error) {
-      console.warn(`${provider.name} image parsing failed, trying next provider:`, error);
+      console.warn(`[RecipeParser] ${provider.name} image parsing failed:`, error);
     }
   }
 

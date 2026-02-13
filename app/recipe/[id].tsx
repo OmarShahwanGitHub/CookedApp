@@ -276,24 +276,32 @@ export default function RecipeDetailScreen() {
                 </TouchableOpacity>
               )}
             </View>
-            {(isEditing ? ingredients : recipe.ingredients).map((ingredient, index) => (
+            {(isEditing ? ingredients : recipe.ingredients).map((ingredient) => (
               <View key={ingredient.id} style={styles.ingredientItem}>
                 {isEditing ? (
                   <>
-                    <TextInput
-                      style={styles.qtyInput}
-                      value={ingredient.quantity}
-                      onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'quantity', v)}
-                      placeholder="Qty"
-                    />
-                    <TextInput
-                      style={styles.nameInput}
-                      value={ingredient.name}
-                      onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'name', v)}
-                      placeholder="Ingredient"
-                    />
-                    <TouchableOpacity onPress={() => handleRemoveIngredient(ingredient.id)}>
-                      <Trash2 size={16} color={Colors.textLight} />
+                    <View style={styles.ingredientCard}>
+                      <TextInput
+                        style={styles.ingredientCardQty}
+                        value={ingredient.quantity}
+                        onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'quantity', v)}
+                        placeholder="Qty"
+                        placeholderTextColor={Colors.textLight}
+                      />
+                      <TextInput
+                        style={styles.ingredientCardName}
+                        value={ingredient.name}
+                        onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'name', v)}
+                        placeholder="Ingredient"
+                        placeholderTextColor={Colors.textLight}
+                      />
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => handleRemoveIngredient(ingredient.id)}
+                      style={styles.ingredientDeleteBtn}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    >
+                      <Trash2 size={18} color={Colors.textLight} />
                     </TouchableOpacity>
                   </>
                 ) : (
@@ -418,22 +426,28 @@ export default function RecipeDetailScreen() {
 
             {cookAgainIngredients.map(ingredient => (
               <View key={ingredient.id} style={styles.modalIngredientRow}>
-                <TextInput
-                  style={styles.modalQtyInput}
-                  value={ingredient.quantity}
-                  onChangeText={(v) => handleCookAgainUpdateIngredient(ingredient.id, 'quantity', v)}
-                  placeholder="Qty"
-                  placeholderTextColor={Colors.textLight}
-                />
-                <TextInput
-                  style={styles.modalNameInput}
-                  value={ingredient.name}
-                  onChangeText={(v) => handleCookAgainUpdateIngredient(ingredient.id, 'name', v)}
-                  placeholder="Ingredient"
-                  placeholderTextColor={Colors.textLight}
-                />
-                <TouchableOpacity onPress={() => handleCookAgainRemoveIngredient(ingredient.id)}>
-                  <Trash2 size={16} color={Colors.textLight} />
+                <View style={styles.modalIngredientCard}>
+                  <TextInput
+                    style={styles.modalIngredientCardQty}
+                    value={ingredient.quantity}
+                    onChangeText={(v) => handleCookAgainUpdateIngredient(ingredient.id, 'quantity', v)}
+                    placeholder="Qty"
+                    placeholderTextColor={Colors.textLight}
+                  />
+                  <TextInput
+                    style={styles.modalIngredientCardName}
+                    value={ingredient.name}
+                    onChangeText={(v) => handleCookAgainUpdateIngredient(ingredient.id, 'name', v)}
+                    placeholder="Ingredient"
+                    placeholderTextColor={Colors.textLight}
+                  />
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleCookAgainRemoveIngredient(ingredient.id)}
+                  style={styles.modalIngredientDeleteBtn}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <Trash2 size={18} color={Colors.textLight} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -605,23 +619,34 @@ const styles = StyleSheet.create({
     color: Colors.text,
     lineHeight: 22,
   },
-  qtyInput: {
-    width: 60,
-    padding: 10,
-    backgroundColor: Colors.surface,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    fontSize: 14,
-  },
-  nameInput: {
+  ingredientCard: {
     flex: 1,
-    padding: 10,
-    backgroundColor: Colors.surface,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 14,
+    minHeight: 48,
     borderWidth: 1,
     borderColor: Colors.border,
-    fontSize: 14,
+    gap: 8,
+  },
+  ingredientCardQty: {
+    fontSize: 15,
+    color: Colors.text,
+    paddingVertical: 10,
+    minWidth: 48,
+    maxWidth: 100,
+  },
+  ingredientCardName: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.text,
+    paddingVertical: 10,
+  },
+  ingredientDeleteBtn: {
+    padding: 8,
   },
   stepItem: {
     flexDirection: 'row',
@@ -815,24 +840,33 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 10,
   },
-  modalQtyInput: {
-    width: 70,
-    padding: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    fontSize: 14,
-    color: Colors.text,
-  },
-  modalNameInput: {
+  modalIngredientCard: {
     flex: 1,
-    padding: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 14,
+    minHeight: 48,
     borderWidth: 1,
     borderColor: Colors.border,
-    fontSize: 14,
+    gap: 8,
+  },
+  modalIngredientCardQty: {
+    fontSize: 15,
     color: Colors.text,
+    paddingVertical: 10,
+    minWidth: 48,
+    maxWidth: 100,
+  },
+  modalIngredientCardName: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.text,
+    paddingVertical: 10,
+  },
+  modalIngredientDeleteBtn: {
+    padding: 8,
   },
 });
