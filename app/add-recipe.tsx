@@ -418,6 +418,8 @@ export default function AddRecipeScreen() {
                 onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'quantity', v)}
                 placeholder="Qty"
                 placeholderTextColor={Colors.textLight}
+                multiline
+                textAlignVertical="top"
               />
               <TextInput
                 style={styles.ingredientCardName}
@@ -425,6 +427,8 @@ export default function AddRecipeScreen() {
                 onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'name', v)}
                 placeholder="Ingredient"
                 placeholderTextColor={Colors.textLight}
+                multiline
+                textAlignVertical="top"
               />
             </View>
             <TouchableOpacity
@@ -730,17 +734,17 @@ const styles = StyleSheet.create({
   },
   ingredientRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 10,
     gap: 10,
   },
   ingredientCard: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: Colors.white,
     borderRadius: 12,
-    paddingVertical: 4,
+    paddingVertical: 12,
     paddingHorizontal: 14,
     minHeight: 48,
     borderWidth: 1,
@@ -750,15 +754,19 @@ const styles = StyleSheet.create({
   ingredientCardQty: {
     fontSize: 15,
     color: Colors.text,
-    paddingVertical: 10,
-    minWidth: 48,
-    maxWidth: 100,
+    lineHeight: 22,
+    paddingVertical: 4,
+    minWidth: 56,
+    maxWidth: 120,
+    minHeight: 24,
   },
   ingredientCardName: {
     flex: 1,
     fontSize: 15,
     color: Colors.text,
-    paddingVertical: 10,
+    lineHeight: 22,
+    paddingVertical: 4,
+    minHeight: 24,
   },
   removeButton: {
     padding: 8,

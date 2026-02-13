@@ -287,6 +287,8 @@ export default function RecipeDetailScreen() {
                         onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'quantity', v)}
                         placeholder="Qty"
                         placeholderTextColor={Colors.textLight}
+                        multiline
+                        textAlignVertical="top"
                       />
                       <TextInput
                         style={styles.ingredientCardName}
@@ -294,6 +296,8 @@ export default function RecipeDetailScreen() {
                         onChangeText={(v) => handleUpdateIngredient(ingredient.id, 'name', v)}
                         placeholder="Ingredient"
                         placeholderTextColor={Colors.textLight}
+                        multiline
+                        textAlignVertical="top"
                       />
                     </View>
                     <TouchableOpacity
@@ -433,6 +437,8 @@ export default function RecipeDetailScreen() {
                     onChangeText={(v) => handleCookAgainUpdateIngredient(ingredient.id, 'quantity', v)}
                     placeholder="Qty"
                     placeholderTextColor={Colors.textLight}
+                    multiline
+                    textAlignVertical="top"
                   />
                   <TextInput
                     style={styles.modalIngredientCardName}
@@ -440,6 +446,8 @@ export default function RecipeDetailScreen() {
                     onChangeText={(v) => handleCookAgainUpdateIngredient(ingredient.id, 'name', v)}
                     placeholder="Ingredient"
                     placeholderTextColor={Colors.textLight}
+                    multiline
+                    textAlignVertical="top"
                   />
                 </View>
                 <TouchableOpacity
@@ -603,7 +611,7 @@ const styles = StyleSheet.create({
   },
   ingredientItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 10,
     gap: 12,
   },
@@ -622,10 +630,10 @@ const styles = StyleSheet.create({
   ingredientCard: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: Colors.white,
     borderRadius: 12,
-    paddingVertical: 4,
+    paddingVertical: 12,
     paddingHorizontal: 14,
     minHeight: 48,
     borderWidth: 1,
@@ -635,15 +643,19 @@ const styles = StyleSheet.create({
   ingredientCardQty: {
     fontSize: 15,
     color: Colors.text,
-    paddingVertical: 10,
-    minWidth: 48,
-    maxWidth: 100,
+    lineHeight: 22,
+    paddingVertical: 4,
+    minWidth: 56,
+    maxWidth: 120,
+    minHeight: 24,
   },
   ingredientCardName: {
     flex: 1,
     fontSize: 15,
     color: Colors.text,
-    paddingVertical: 10,
+    lineHeight: 22,
+    paddingVertical: 4,
+    minHeight: 24,
   },
   ingredientDeleteBtn: {
     padding: 8,
@@ -836,17 +848,17 @@ const styles = StyleSheet.create({
   },
   modalIngredientRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 10,
     gap: 10,
   },
   modalIngredientCard: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: Colors.white,
     borderRadius: 12,
-    paddingVertical: 4,
+    paddingVertical: 12,
     paddingHorizontal: 14,
     minHeight: 48,
     borderWidth: 1,
@@ -856,15 +868,19 @@ const styles = StyleSheet.create({
   modalIngredientCardQty: {
     fontSize: 15,
     color: Colors.text,
-    paddingVertical: 10,
-    minWidth: 48,
-    maxWidth: 100,
+    lineHeight: 22,
+    paddingVertical: 4,
+    minWidth: 56,
+    maxWidth: 120,
+    minHeight: 24,
   },
   modalIngredientCardName: {
     flex: 1,
     fontSize: 15,
     color: Colors.text,
-    paddingVertical: 10,
+    lineHeight: 22,
+    paddingVertical: 4,
+    minHeight: 24,
   },
   modalIngredientDeleteBtn: {
     padding: 8,
