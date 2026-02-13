@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { Lock, Crown, Check } from 'lucide-react-native';
+import { Lock, Crown, Check, X } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import {
   getOfferings,
   purchasePackage,
   restorePurchases,
   getRecipeLimit,
+  isRevenueCatConfigured,
 } from '@/services/subscriptionService';
 
 interface PaywallScreenProps {
@@ -76,8 +77,8 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.closeButton} onPress={onDismiss}>
-        <Text style={styles.closeText}>Close</Text>
+      <TouchableOpacity style={styles.closeButton} onPress={onDismiss} accessibilityLabel="Close">
+        <X size={24} color={Colors.text} />
       </TouchableOpacity>
 
       <ScrollView
@@ -131,7 +132,9 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
           <View style={styles.noOfferings}>
             <Lock size={24} color={Colors.textLight} />
             <Text style={styles.noOfferingsText}>
-              Subscriptions are not yet configured. Add EXPO_PUBLIC_REVENUECAT_API_KEY to your .env (local) or EAS environment variables (production) to enable purchases.
+              {isRevenueCatConfigured()
+                ? 'No subscription plans are available yet. Create products in App Store Connect, add them to an offering in the RevenueCat dashboard, and ensure your app bundle ID matches.'
+                : 'Add EXPO_PUBLIC_REVENUECAT_API_KEY to your .env (local) or EAS environment variables (production) to enable purchases.'}
             </Text>
           </View>
         )}
@@ -171,11 +174,6 @@ const styles = StyleSheet.create({
     right: 16,
     padding: 12,
     zIndex: 10,
-  },
-  closeText: {
-    fontSize: 16,
-    color: Colors.primary,
-    fontWeight: '500' as const,
   },
   header: {
     alignItems: 'center',

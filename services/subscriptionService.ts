@@ -48,6 +48,11 @@ function getRevenueCatApiKey(): string | null {
   return process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || process.env.REVENUECAT_API_KEY || null;
 }
 
+/** True if the RevenueCat API key is set (used to show the right message when offerings are empty). */
+export function isRevenueCatConfigured(): boolean {
+  return !!getRevenueCatApiKey();
+}
+
 export function getRecipeLimit(): number {
   return FREE_RECIPE_LIMIT;
 }
