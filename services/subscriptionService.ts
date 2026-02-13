@@ -36,9 +36,10 @@ export async function initializeSubscriptions(): Promise<void> {
     await purchases.configure({
       apiKey,
     });
-    console.log('RevenueCat initialized');
+    const keyPreview = apiKey.substring(0, 8) + '...';
+    console.log('[RevenueCat] Initialized with key', keyPreview, apiKey.startsWith('appl_') ? '(iOS)' : '(not appl_ - use iOS public key)');
   } catch (error) {
-    console.error('Failed to initialize RevenueCat:', error);
+    console.error('[RevenueCat] Configure failed:', error);
   }
 }
 
@@ -101,16 +102,29 @@ export async function canAddRecipe(currentRecipeCount: number): Promise<boolean>
 
 export async function getOfferings(): Promise<any[]> {
   const purchases = await getPurchases();
-  if (!purchases) return [];
+  if (!purchases) {
+    console.warn('[RevenueCat] getOfferings: Purchases module not available');
+    return [];
+  }
 
   try {
     const offerings = await purchases.getOfferings();
-    if (offerings.current) {
+    const hasCurrent = !!offerings?.current;
+    const packageCount = offerings?.current?.availablePackages?.length ?? 0;
+    const allIds = offerings?.all ? Object.keys(offerings.all) : [];
+    console.log('[RevenueCat] getOfferings: current=', hasCurrent, 'packages=', packageCount, 'offeringIds=', allIds);
+    if (!hasCurrent && allIds.length > 0) {
+      console.warn('[RevenueCat] No offering is set as Current. In RevenueCat dashboard → Offerings → set one as "Current".');
+    }
+    if (hasCurrent && packageCount === 0) {
+      console.warn('[RevenueCat] Current offering has 0 packages. Add a package (with a product) to the current offering.');
+    }
+    if (offerings?.current) {
       return offerings.current.availablePackages;
     }
     return [];
-  } catch (error) {
-    console.error('Failed to get offerings:', error);
+  } catch (error: any) {
+    console.error('[RevenueCat] getOfferings failed:', error?.message ?? error);
     return [];
   }
 }
