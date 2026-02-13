@@ -12,6 +12,9 @@
       "distribution": "internal"
     },
     "production": {
+      "env": {
+        "EAS_SKIP_AUTO_FINGERPRINT": "1"
+      },
       "autoIncrement": true
     }
   },
