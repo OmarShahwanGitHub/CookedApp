@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { Lock, Crown, Check } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import {
@@ -80,67 +80,74 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
         <Text style={styles.closeText}>Close</Text>
       </TouchableOpacity>
 
-      <View style={styles.header}>
-        <View style={styles.iconContainer}>
-          <Crown size={48} color={Colors.primary} />
-        </View>
-        <Text style={styles.title}>Unlock Cooked Pro</Text>
-        <Text style={styles.subtitle}>
-          You've reached the free limit of {limit} recipes. Upgrade to save unlimited recipes and access all features.
-        </Text>
-      </View>
-
-      <View style={styles.features}>
-        {features.map((feature, index) => (
-          <View key={index} style={styles.featureRow}>
-            <Check size={20} color={Colors.success} />
-            <Text style={styles.featureText}>{feature}</Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.header}>
+          <View style={styles.iconContainer}>
+            <Crown size={48} color={Colors.primary} />
           </View>
-        ))}
-      </View>
-
-      {isLoading ? (
-        <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
-      ) : offerings.length > 0 ? (
-        <View style={styles.offerings}>
-          {offerings.map((pkg: any, index: number) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.offeringButton}
-              onPress={() => handlePurchase(pkg)}
-              disabled={isPurchasing}
-            >
-              {isPurchasing ? (
-                <ActivityIndicator color={Colors.white} />
-              ) : (
-                <>
-                  <Text style={styles.offeringTitle}>{pkg.product?.title || 'Subscribe'}</Text>
-                  <Text style={styles.offeringPrice}>{pkg.product?.priceString || ''}</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-      ) : (
-        <View style={styles.noOfferings}>
-          <Lock size={24} color={Colors.textLight} />
-          <Text style={styles.noOfferingsText}>
-            Subscriptions are not yet configured. Set the REVENUECAT_API_KEY environment variable to enable purchases.
+          <Text style={styles.title}>Unlock Cooked Pro</Text>
+          <Text style={styles.subtitle}>
+            You've reached the free limit of {limit} recipes. Upgrade to save unlimited recipes and access all features.
           </Text>
         </View>
-      )}
 
-      <TouchableOpacity
-        style={styles.restoreButton}
-        onPress={handleRestore}
-        disabled={isRestoring}
-      >
-        {isRestoring ? (
-          <ActivityIndicator color={Colors.primary} size="small" />
+        <View style={styles.features}>
+          {features.map((feature, index) => (
+            <View key={index} style={styles.featureRow}>
+              <Check size={20} color={Colors.success} />
+              <Text style={styles.featureText}>{feature}</Text>
+            </View>
+          ))}
+        </View>
+
+        {isLoading ? (
+          <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
+        ) : offerings.length > 0 ? (
+          <View style={styles.offerings}>
+            {offerings.map((pkg: any, index: number) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.offeringButton}
+                onPress={() => handlePurchase(pkg)}
+                disabled={isPurchasing}
+              >
+                {isPurchasing ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <>
+                    <Text style={styles.offeringTitle}>{pkg.product?.title || 'Subscribe'}</Text>
+                    <Text style={styles.offeringPrice}>{pkg.product?.priceString || ''}</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
         ) : (
-          <Text style={styles.restoreText}>Restore Purchases</Text>
+          <View style={styles.noOfferings}>
+            <Lock size={24} color={Colors.textLight} />
+            <Text style={styles.noOfferingsText}>
+              Subscriptions are not yet configured. Add EXPO_PUBLIC_REVENUECAT_API_KEY to your .env (local) or EAS environment variables (production) to enable purchases.
+            </Text>
+          </View>
         )}
-      </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.restoreButton}
+          onPress={handleRestore}
+          disabled={isRestoring}
+        >
+          {isRestoring ? (
+            <ActivityIndicator color={Colors.primary} size="small" />
+          ) : (
+            <Text style={styles.restoreText}>Restore Purchases</Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 }
@@ -149,8 +156,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: 24,
-    justifyContent: 'center',
+    paddingTop: 56,
+    paddingBottom: 40,
   },
   closeButton: {
     position: 'absolute',

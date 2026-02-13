@@ -42,11 +42,10 @@ export async function initializeSubscriptions(): Promise<void> {
   }
 }
 
+// Expo only inlines EXPO_PUBLIC_* with static access. Use EXPO_PUBLIC_REVENUECAT_API_KEY in .env / EAS.
 function getRevenueCatApiKey(): string | null {
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env.REVENUECAT_API_KEY || process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || null;
-  }
-  return null;
+  if (typeof process === 'undefined' || !process.env) return null;
+  return process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || process.env.REVENUECAT_API_KEY || null;
 }
 
 export function getRecipeLimit(): number {
