@@ -20,3 +20,12 @@ Runs on port 3001 by default. Set `VIDEO_BACKEND_PORT` to change it.
    - **EXPO_PUBLIC_VIDEO_BACKEND_URL** = the public URL of this backend (e.g. `https://your-video-backend.railway.app` or `https://api.yourapp.com`).
 
 No trailing slash. The app will call `POST {EXPO_PUBLIC_VIDEO_BACKEND_URL}/parse-video` with `{ "url": "..." }`.
+
+## Privacy & support pages
+
+The same deployment serves static pages from `public/`:
+
+- **Privacy policy:** `https://your-backend-url/` (index.html)
+- **Support:** `https://your-backend-url/support.html`
+
+Use these URLs in App Store Connect for Privacy Policy URL and Support URL.

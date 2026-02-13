@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const { parseVideoToRecipe } = require('./parseVideo');
 
@@ -29,6 +30,9 @@ app.post('/parse-video', async (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+// Privacy and support pages (same deployment = more traffic, less spin-down)
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Video parser backend running on port ${PORT}`);
