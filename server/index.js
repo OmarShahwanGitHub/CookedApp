@@ -3,7 +3,7 @@ const cors = require('cors');
 const { parseVideoToRecipe } = require('./parseVideo');
 
 const app = express();
-const PORT = process.env.VIDEO_BACKEND_PORT || 3001;
+const PORT = process.env.PORT || process.env.VIDEO_BACKEND_PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
