@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { Lock, Crown, Check, X } from 'lucide-react-native';
+import { Lock, Crown, Check } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import {
   getOfferings,
@@ -81,10 +81,6 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.closeButton} onPress={onDismiss} accessibilityLabel="Close">
-        <X size={24} color={Colors.text} />
-      </TouchableOpacity>
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -172,15 +168,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
-    paddingTop: 56,
     paddingBottom: 40,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    padding: 12,
-    zIndex: 10,
   },
   header: {
     alignItems: 'center',
