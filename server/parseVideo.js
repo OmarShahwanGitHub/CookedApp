@@ -115,6 +115,14 @@ async function handleGenericVideo(url) {
   }
 }
 
+function getCookiesPath() {
+  const p = process.env.YTDLP_COOKIES_PATH || process.env.YTDLP_COOKIES;
+  if (!p || typeof p !== 'string') return null;
+  const trimmed = p.trim();
+  if (!trimmed) return null;
+  return fs.existsSync(trimmed) ? trimmed : null;
+}
+
 function extractYouTubeAudio(url) {
   return new Promise((resolve, reject) => {
     const tmpFile = path.join(os.tmpdir(), `yt-audio-${Date.now()}.mp3`);
@@ -131,12 +139,25 @@ function extractYouTubeAudio(url) {
       url,
     ];
 
+    const cookiesPath = getCookiesPath();
+    if (cookiesPath) {
+      args.push('--cookies', cookiesPath);
+      console.log('Using YouTube cookies from YTDLP_COOKIES_PATH');
+    }
+
     console.log('Downloading audio with yt-dlp...');
     execFile('yt-dlp', args, { timeout: 120000 }, (error, stdout, stderr) => {
       if (error) {
         cleanupFile(tmpFile);
-        if (stderr && (stderr.includes('Private') || stderr.includes('unavailable'))) {
+        const stderrStr = (stderr || '').toString();
+        if (stderrStr.includes('Private') || stderrStr.includes('unavailable')) {
           const e = new Error('This video is private or unavailable.');
+          e.statusCode = 403;
+          reject(e);
+        } else if (stderrStr.includes('bot') || stderrStr.includes('Sign in to confirm')) {
+          const e = new Error(
+            'YouTube is blocking server requests. Add YouTube cookies: set YTDLP_COOKIES_PATH to a Netscape-format cookie file on your host (see server/README.md).'
+          );
           e.statusCode = 403;
           reject(e);
         } else {
