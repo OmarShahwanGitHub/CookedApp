@@ -16,7 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
 import { useRecipes } from '@/context/RecipeContext';
 import { RecipeSource, ParsedRecipeData, Ingredient, RecipeStep, RecipeCategory } from '@/types/recipe';
-import { parseRecipe, generateId } from '@/utils/parseRecipe';
+import { parseRecipe, generateId, getVideoParseErrorCode } from '@/utils/parseRecipe';
 import { canAddRecipe } from '@/services/subscriptionService';
 import { RECIPE_CATEGORIES } from '@/constants/categories';
 import PaywallScreen from '@/components/PaywallScreen';
@@ -112,7 +112,11 @@ export default function AddRecipeScreen() {
       );
     } catch (error) {
       console.error('Parse error:', error);
-      Alert.alert('Error', 'Failed to parse recipe. Please try again.');
+      const code = getVideoParseErrorCode(error);
+      const message = code
+        ? `Failed to parse recipe. Please try again. (${code})`
+        : 'Failed to parse recipe. Please try again.';
+      Alert.alert('Error', message);
     } finally {
       setIsProcessing(false);
     }
