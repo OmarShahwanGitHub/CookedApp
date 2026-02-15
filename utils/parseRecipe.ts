@@ -9,7 +9,9 @@ function getVideoBackendUrl(): string {
 
   const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost || Constants.manifest?.debuggerHost;
   if (debuggerHost) {
-    return `http://${debuggerHost}`;
+    // iOS blocks plain HTTP to remote hosts (ATS). Use HTTPS for Expo tunnel (*.exp.direct).
+    const protocol = debuggerHost.includes('exp.direct') ? 'https' : 'http';
+    return `${protocol}://${debuggerHost}`;
   }
 
   return 'http://localhost:8081';
