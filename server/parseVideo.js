@@ -151,6 +151,7 @@ function extractYouTubeAudio(url) {
     if (cookiesPath) {
       tmpCookiesPath = copyCookiesToWritable(cookiesPath);
       args.push('--cookies', tmpCookiesPath);
+      args.push('--extractor-args', 'youtube:player_client=android');
       console.log('Using YouTube cookies from YTDLP_COOKIES_PATH (copied to writable temp)');
     }
 
@@ -165,8 +166,10 @@ function extractYouTubeAudio(url) {
           e.statusCode = 403;
           reject(e);
         } else if (stderrStr.includes('bot') || stderrStr.includes('Sign in to confirm')) {
+          const errorLine = stderrStr.split('\n').find(l => l.startsWith('ERROR:'));
+          const detail = errorLine ? errorLine.replace(/^ERROR:\s*/, '').trim() : 'YouTube blocked the request.';
           const e = new Error(
-            'YouTube is blocking server requests. Add YouTube cookies: set YTDLP_COOKIES_PATH to a Netscape-format cookie file on your host (see server/README.md).'
+            `YouTube is blocking server requests. (${detail}) Re-export cookies: log into youtube.com, use a Netscape-format export (see server/README.md), and update the secret file.`
           );
           e.statusCode = 403;
           reject(e);
