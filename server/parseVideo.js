@@ -123,6 +123,13 @@ function getCookiesPath() {
   return fs.existsSync(trimmed) ? trimmed : null;
 }
 
+/** Copy cookies to a writable temp file so yt-dlp can read and optionally write (avoids read-only /etc/secrets). */
+function copyCookiesToWritable(secretPath) {
+  const tmpPath = path.join(os.tmpdir(), `yt-dlp-cookies-${Date.now()}.txt`);
+  fs.copyFileSync(secretPath, tmpPath);
+  return tmpPath;
+}
+
 function extractYouTubeAudio(url) {
   return new Promise((resolve, reject) => {
     const tmpFile = path.join(os.tmpdir(), `yt-audio-${Date.now()}.mp3`);
@@ -140,13 +147,16 @@ function extractYouTubeAudio(url) {
     ];
 
     const cookiesPath = getCookiesPath();
+    let tmpCookiesPath = null;
     if (cookiesPath) {
-      args.push('--cookies', cookiesPath);
-      console.log('Using YouTube cookies from YTDLP_COOKIES_PATH');
+      tmpCookiesPath = copyCookiesToWritable(cookiesPath);
+      args.push('--cookies', tmpCookiesPath);
+      console.log('Using YouTube cookies from YTDLP_COOKIES_PATH (copied to writable temp)');
     }
 
     console.log('Downloading audio with yt-dlp...');
     execFile('yt-dlp', args, { timeout: 120000 }, (error, stdout, stderr) => {
+      if (tmpCookiesPath) cleanupFile(tmpCookiesPath);
       if (error) {
         cleanupFile(tmpFile);
         const stderrStr = (stderr || '').toString();
