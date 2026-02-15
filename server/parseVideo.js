@@ -120,6 +120,7 @@ function extractYouTubeAudio(url) {
     const tmpFile = path.join(os.tmpdir(), `yt-audio-${Date.now()}.mp3`);
 
     const args = [
+      '--js-runtimes', 'node',
       '--no-playlist',
       '-x',
       '--audio-format', 'mp3',
