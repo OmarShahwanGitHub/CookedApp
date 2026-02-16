@@ -1,5 +1,5 @@
 /**
- * Video-to-recipe: YouTube via TranscriptAPI.com, other URLs via AssemblyAI.
+ * Video-to-recipe: YouTube (TranscriptAPI), Facebook/Instagram/Pinterest/TikTok/etc (Apify), direct URLs (AssemblyAI).
  * No scraping, no yt-dlp, no ffmpeg, no cookies.
  */
 
@@ -7,12 +7,29 @@ const { parseTranscriptToRecipe } = require('./recipeParse');
 
 const ASSEMBLYAI_BASE = 'https://api.assemblyai.com/v2';
 const TRANSCRIPTAPI_BASE = 'https://transcriptapi.com/api/v2';
+const APIFY_ACTOR = 'invideoiq~video-transcriber';
+const APIFY_RUN_SYNC_MS = 4 * 60 * 1000; // 4 min for social video transcribe
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const TRANSCRIPT_UNAVAILABLE_MSG = 'Transcript unavailable. Please paste recipe text manually.';
 
 function isYouTubeUrl(url) {
   return /(?:youtube\.com|youtu\.be)/i.test(url);
+}
+
+/** Facebook, Instagram, Pinterest, TikTok, X/Twitter, Dailymotion, Vimeo, Loom, etc. */
+function isSocialVideoUrl(url) {
+  const host = (url && typeof url === 'string') ? url.toLowerCase() : '';
+  return (
+    /(?:facebook\.com|fb\.com|fb\.watch|fb\.reel)/i.test(host) ||
+    /(?:instagram\.com|instagr\.am)/i.test(host) ||
+    /(?:pinterest\.com|pin\.it)/i.test(host) ||
+    /(?:tiktok\.com|vm\.tiktok)/i.test(host) ||
+    /(?:twitter\.com|x\.com)/i.test(host) ||
+    /dailymotion\.com/i.test(host) ||
+    /vimeo\.com/i.test(host) ||
+    /loom\.com/i.test(host)
+  );
 }
 
 function getAssemblyAIKey() {
@@ -29,6 +46,12 @@ function getTranscriptAPIKey() {
   const key = process.env.TRANSCRIPTAPI_API_KEY;
   if (!key || typeof key !== 'string' || !key.trim()) return null;
   return key.trim();
+}
+
+function getApifyToken() {
+  const t = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN;
+  if (!t || typeof t !== 'string' || !t.trim()) return null;
+  return t.trim();
 }
 
 function validateUrl(url) {
@@ -163,6 +186,61 @@ async function fetchYouTubeTranscript(videoUrl) {
   return text;
 }
 
+/**
+ * Fetch transcript for social video URLs (Facebook, Instagram, Pinterest, TikTok, X, etc.) via Apify Video Transcriber.
+ * Returns plain text or throws with statusCode 422 and TRANSCRIPT_UNAVAILABLE_MSG.
+ */
+async function fetchSocialVideoTranscript(videoUrl) {
+  const token = getApifyToken();
+  if (!token) {
+    const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+    err.statusCode = 422;
+    throw err;
+  }
+  const apiUrl = `https://api.apify.com/v2/acts/${APIFY_ACTOR}/run-sync?token=${encodeURIComponent(token)}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), APIFY_RUN_SYNC_MS);
+  let res;
+  try {
+    res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ video_url: videoUrl }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') {
+      const err = new Error('Transcript timed out. Please try again or paste recipe text manually.');
+      err.statusCode = 408;
+      throw err;
+    }
+    throw e;
+  }
+  clearTimeout(timeoutId);
+  if (!res.ok) {
+    const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+    err.statusCode = 422;
+    throw err;
+  }
+  const data = await res.json().catch(() => ({}));
+  const status = data.status;
+  const payload = data.data || data;
+  const segments = payload.transcript;
+  if (status !== 'success' || !Array.isArray(segments) || segments.length === 0) {
+    const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+    err.statusCode = 422;
+    throw err;
+  }
+  const text = segments.map((s) => (s && s.text) || '').filter(Boolean).join(' ').trim();
+  if (!text) {
+    const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+    err.statusCode = 422;
+    throw err;
+  }
+  return text;
+}
+
 async function parseVideoToRecipe(url) {
   validateUrl(url);
 
@@ -175,6 +253,21 @@ async function parseVideoToRecipe(url) {
       return { recipe, source: 'transcriptapi' };
     } catch (err) {
       if (err.statusCode === 422) throw err;
+      const fallback = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+      fallback.statusCode = 422;
+      throw fallback;
+    }
+  }
+
+  if (isSocialVideoUrl(url)) {
+    console.log('Fetching social video transcript via Apify:', url.replace(/[#?].*/, ''));
+    try {
+      const transcriptText = await fetchSocialVideoTranscript(url);
+      console.log('Social video transcript received, parsing recipe with AI...');
+      const recipe = await parseTranscriptToRecipe(transcriptText);
+      return { recipe, source: 'apify' };
+    } catch (err) {
+      if (err.statusCode === 422 || err.statusCode === 408) throw err;
       const fallback = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
       fallback.statusCode = 422;
       throw fallback;

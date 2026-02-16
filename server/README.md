@@ -2,10 +2,11 @@
 
 Runs separately from the Expo app. The app sends a video URL to this backend:
 
-- **YouTube** – transcript via [TranscriptAPI.com](https://transcriptapi.com) (no scraping, no cookies).
-- **Other URLs** – transcript via **AssemblyAI** (direct media URLs only).
+- **YouTube** – transcript via [TranscriptAPI.com](https://transcriptapi.com).
+- **Facebook, Instagram, Pinterest, TikTok, X/Twitter, Dailymotion, Vimeo, Loom** – transcript via [Apify Video Transcriber](https://apify.com/invideoiq/video-transcriber) (speech-to-text).
+- **Other URLs** (direct media links) – transcript via **AssemblyAI**.
 
-Recipe parsing uses your existing AI (Anthropic → OpenAI → Gemini). No ffmpeg, no yt-dlp.
+Recipe parsing uses your existing AI (Anthropic → OpenAI → Gemini). No scraping, no cookies, no ffmpeg.
 
 ## Run locally
 
@@ -19,14 +20,15 @@ Runs on port 3001 by default. Set `VIDEO_BACKEND_PORT` to change it.
 
 ## Environment variables
 
-- **TRANSCRIPTAPI_API_KEY** – For YouTube: get a key at [transcriptapi.com](https://transcriptapi.com). Required if you want YouTube links to work.
-- **ASSEMBLYAI_API_KEY** – For non-YouTube direct media URLs (e.g. `https://example.com/audio.mp3`). Required if you want non-YouTube video/audio URLs to work.
+- **TRANSCRIPTAPI_API_KEY** – For YouTube. Get a key at [transcriptapi.com](https://transcriptapi.com).
+- **APIFY_API_TOKEN** – For Facebook, Instagram, Pinterest, TikTok, X, etc. Get a token at [apify.com](https://apify.com) (Actor: [Video Transcriber](https://apify.com/invideoiq/video-transcriber); paid per result).
+- **ASSEMBLYAI_API_KEY** – For direct media URLs (e.g. `https://example.com/audio.mp3`). Get a key at [assemblyai.com](https://www.assemblyai.com).
 - **ANTHROPIC_API_KEY** / **OPENAI_API_KEY** / **GEMINI_API_KEY** (or `EXPO_PUBLIC_*` variants) – At least one required for recipe parsing (Anthropic → OpenAI → Gemini fallback).
 
 ## Deploy for TestFlight / production
 
 1. Deploy this server to a Node host (e.g. Render, Railway, Fly.io). No ffmpeg or yt-dlp needed.
-2. Set **TRANSCRIPTAPI_API_KEY** (YouTube), **ASSEMBLYAI_API_KEY** (direct media URLs), and at least one LLM key (see above) on the server.
+2. Set **TRANSCRIPTAPI_API_KEY** (YouTube), **APIFY_API_TOKEN** (Facebook/Instagram/Pinterest/TikTok/etc.), **ASSEMBLYAI_API_KEY** (direct media URLs), and at least one LLM key (see above) on the server.
 3. In your **Expo app** (and EAS env for production), set:
    - **EXPO_PUBLIC_VIDEO_BACKEND_URL** = your backend URL (e.g. `https://cookedapp.onrender.com`). No trailing slash.
 
