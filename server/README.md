@@ -1,6 +1,11 @@
 # Video parsing backend
 
-Runs separately from the Expo app. The app sends a video URL to this backend; the backend uses **AssemblyAI** for transcription and existing AI (Anthropic / OpenAI / Gemini) for recipe parsing. No YouTube scraping, no cookies, no ffmpeg/yt-dlp.
+Runs separately from the Expo app. The app sends a video URL to this backend:
+
+- **YouTube** – transcript via [TranscriptAPI.com](https://transcriptapi.com) (no scraping, no cookies).
+- **Other URLs** – transcript via **AssemblyAI** (direct media URLs only).
+
+Recipe parsing uses your existing AI (Anthropic → OpenAI → Gemini). No ffmpeg, no yt-dlp.
 
 ## Run locally
 
@@ -14,14 +19,14 @@ Runs on port 3001 by default. Set `VIDEO_BACKEND_PORT` to change it.
 
 ## Environment variables
 
-- **ASSEMBLYAI_API_KEY** (required) – Your AssemblyAI API key for URL-based transcription.
-- **OPENAI_API_KEY** or **EXPO_PUBLIC_OPENAI_API_KEY** – Used by recipe parsing (Whisper not used for video flow).
+- **TRANSCRIPTAPI_API_KEY** – For YouTube: get a key at [transcriptapi.com](https://transcriptapi.com). Required if you want YouTube links to work.
+- **ASSEMBLYAI_API_KEY** – For non-YouTube direct media URLs (e.g. `https://example.com/audio.mp3`). Required if you want non-YouTube video/audio URLs to work.
 - **ANTHROPIC_API_KEY** / **OPENAI_API_KEY** / **GEMINI_API_KEY** (or `EXPO_PUBLIC_*` variants) – At least one required for recipe parsing (Anthropic → OpenAI → Gemini fallback).
 
 ## Deploy for TestFlight / production
 
 1. Deploy this server to a Node host (e.g. Render, Railway, Fly.io). No ffmpeg or yt-dlp needed.
-2. Set **ASSEMBLYAI_API_KEY** and at least one LLM key (see above) on the server.
+2. Set **TRANSCRIPTAPI_API_KEY** (YouTube), **ASSEMBLYAI_API_KEY** (direct media URLs), and at least one LLM key (see above) on the server.
 3. In your **Expo app** (and EAS env for production), set:
    - **EXPO_PUBLIC_VIDEO_BACKEND_URL** = your backend URL (e.g. `https://cookedapp.onrender.com`). No trailing slash.
 

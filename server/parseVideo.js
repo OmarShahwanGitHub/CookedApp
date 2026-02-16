@@ -1,22 +1,33 @@
 /**
- * Video-to-recipe: transcript via AssemblyAI only.
- * No YouTube scraping, no yt-dlp, no ffmpeg, no cookies.
+ * Video-to-recipe: YouTube via TranscriptAPI.com, other URLs via AssemblyAI.
+ * No scraping, no yt-dlp, no ffmpeg, no cookies.
  */
 
 const { parseTranscriptToRecipe } = require('./recipeParse');
 
 const ASSEMBLYAI_BASE = 'https://api.assemblyai.com/v2';
+const TRANSCRIPTAPI_BASE = 'https://transcriptapi.com/api/v2';
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const TRANSCRIPT_UNAVAILABLE_MSG = 'Transcript unavailable. Please paste recipe text manually.';
 
-function getApiKey() {
+function isYouTubeUrl(url) {
+  return /(?:youtube\.com|youtu\.be)/i.test(url);
+}
+
+function getAssemblyAIKey() {
   const key = process.env.ASSEMBLYAI_API_KEY;
   if (!key || typeof key !== 'string' || !key.trim()) {
     const err = new Error('ASSEMBLYAI_API_KEY is not set.');
     err.statusCode = 500;
     throw err;
   }
+  return key.trim();
+}
+
+function getTranscriptAPIKey() {
+  const key = process.env.TRANSCRIPTAPI_API_KEY;
+  if (!key || typeof key !== 'string' || !key.trim()) return null;
   return key.trim();
 }
 
@@ -46,7 +57,7 @@ function validateUrl(url) {
 }
 
 async function assemblyaiFetch(path, options = {}) {
-  const apiKey = getApiKey();
+  const apiKey = getAssemblyAIKey();
   const url = path.startsWith('http') ? path : `${ASSEMBLYAI_BASE}${path}`;
   const res = await fetch(url, {
     ...options,
@@ -110,8 +121,65 @@ async function waitForTranscript(transcriptId) {
   throw err;
 }
 
+/**
+ * Fetch transcript for a YouTube URL via TranscriptAPI.com.
+ * Returns plain text or throws with statusCode 422 and TRANSCRIPT_UNAVAILABLE_MSG.
+ */
+async function fetchYouTubeTranscript(videoUrl) {
+  const apiKey = getTranscriptAPIKey();
+  if (!apiKey) {
+    const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+    err.statusCode = 422;
+    throw err;
+  }
+  const params = new URLSearchParams({
+    video_url: videoUrl,
+    format: 'json',
+    include_timestamp: 'false',
+  });
+  const apiUrl = `${TRANSCRIPTAPI_BASE}/youtube/transcript?${params}`;
+  const res = await fetch(apiUrl, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!res.ok) {
+    const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+    err.statusCode = 422;
+    throw err;
+  }
+  const data = await res.json().catch(() => ({}));
+  const segments = data.transcript;
+  if (!Array.isArray(segments) || segments.length === 0) {
+    const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+    err.statusCode = 422;
+    throw err;
+  }
+  const text = segments.map((s) => (s && s.text) || '').filter(Boolean).join(' ').trim();
+  if (!text) {
+    const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+    err.statusCode = 422;
+    throw err;
+  }
+  return text;
+}
+
 async function parseVideoToRecipe(url) {
   validateUrl(url);
+
+  if (isYouTubeUrl(url)) {
+    console.log('Fetching YouTube transcript via TranscriptAPI:', url.replace(/[#?].*/, ''));
+    try {
+      const transcriptText = await fetchYouTubeTranscript(url);
+      console.log('YouTube transcript received, parsing recipe with AI...');
+      const recipe = await parseTranscriptToRecipe(transcriptText);
+      return { recipe, source: 'transcriptapi' };
+    } catch (err) {
+      if (err.statusCode === 422) throw err;
+      const fallback = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+      fallback.statusCode = 422;
+      throw fallback;
+    }
+  }
 
   console.log('Submitting URL to AssemblyAI for transcription:', url.replace(/[#?].*/, ''));
 
