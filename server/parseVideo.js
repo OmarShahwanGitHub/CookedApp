@@ -1,25 +1,23 @@
-const { execFile } = require('child_process');
-const ffmpeg = require('fluent-ffmpeg');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const { transcribeAudio } = require('./transcribe');
+/**
+ * Video-to-recipe: transcript via AssemblyAI only.
+ * No YouTube scraping, no yt-dlp, no ffmpeg, no cookies.
+ */
+
 const { parseTranscriptToRecipe } = require('./recipeParse');
-const { fetchYouTubeCaptions } = require('./youtubeCaption');
 
-function isYouTubeUrl(url) {
-  return /(?:youtube\.com|youtu\.be)/i.test(url);
-}
+const ASSEMBLYAI_BASE = 'https://api.assemblyai.com/v2';
+const POLL_INTERVAL_MS = 3000;
+const POLL_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+const TRANSCRIPT_UNAVAILABLE_MSG = 'Transcript unavailable. Please paste recipe text manually.';
 
-function getVideoId(url) {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-  ];
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+function getApiKey() {
+  const key = process.env.ASSEMBLYAI_API_KEY;
+  if (!key || typeof key !== 'string' || !key.trim()) {
+    const err = new Error('ASSEMBLYAI_API_KEY is not set.');
+    err.statusCode = 500;
+    throw err;
   }
-  return null;
+  return key.trim();
 }
 
 function validateUrl(url) {
@@ -31,30 +29,15 @@ function validateUrl(url) {
     err.statusCode = 400;
     throw err;
   }
-
   if (!['http:', 'https:'].includes(parsed.protocol)) {
     const err = new Error('Only http and https URLs are supported.');
     err.statusCode = 400;
     throw err;
   }
-
   const hostname = parsed.hostname.toLowerCase();
-  const blockedPatterns = [
-    /^localhost$/,
-    /^127\./,
-    /^10\./,
-    /^172\.(1[6-9]|2\d|3[01])\./,
-    /^192\.168\./,
-    /^0\./,
-    /^169\.254\./,
-    /^\[::1\]$/,
-    /^\[fd/,
-    /^\[fe80/,
-    /^metadata\.google/,
-  ];
-
-  for (const pattern of blockedPatterns) {
-    if (pattern.test(hostname)) {
+  const blocked = [/^localhost$/i, /^127\./i, /^10\./i, /^172\.(1[6-9]|2\d|3[01])\./i, /^192\.168\./i];
+  for (const re of blocked) {
+    if (re.test(hostname)) {
       const err = new Error('URLs pointing to internal or private addresses are not allowed.');
       err.statusCode = 400;
       throw err;
@@ -62,184 +45,90 @@ function validateUrl(url) {
   }
 }
 
+async function assemblyaiFetch(path, options = {}) {
+  const apiKey = getApiKey();
+  const url = path.startsWith('http') ? path : `${ASSEMBLYAI_BASE}${path}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      Authorization: apiKey,
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+  const data = res.ok ? await res.json().catch(() => ({})) : await res.text();
+  if (!res.ok) {
+    const message = typeof data === 'string' ? data : (data.error || data.status_message || res.statusText) || `HTTP ${res.status}`;
+    const err = new Error(message);
+    err.statusCode = res.status;
+    throw err;
+  }
+  return data;
+}
+
+async function submitTranscript(audioUrl) {
+  const body = {
+    audio_url: audioUrl,
+    speech_models: ['universal-2', 'universal-1'],
+  };
+  const data = await assemblyaiFetch('/transcript', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  if (!data.id) {
+    const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+    err.statusCode = 422;
+    throw err;
+  }
+  return data.id;
+}
+
+async function getTranscript(transcriptId) {
+  const data = await assemblyaiFetch(`/transcript/${transcriptId}`);
+  return { status: data.status, text: data.text, error: data.error };
+}
+
+async function waitForTranscript(transcriptId) {
+  const deadline = Date.now() + POLL_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const { status, text, error } = await getTranscript(transcriptId);
+    if (status === 'completed') {
+      if (typeof text === 'string' && text.trim().length > 0) return text.trim();
+      const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+      err.statusCode = 422;
+      throw err;
+    }
+    if (status === 'error') {
+      const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+      err.statusCode = 422;
+      throw err;
+    }
+    await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+  }
+  const err = new Error('Transcript timed out. Please try again or paste recipe text manually.');
+  err.statusCode = 408;
+  throw err;
+}
+
 async function parseVideoToRecipe(url) {
   validateUrl(url);
 
-  if (isYouTubeUrl(url)) {
-    return handleYouTube(url);
-  }
-  return handleGenericVideo(url);
-}
+  console.log('Submitting URL to AssemblyAI for transcription:', url.replace(/[#?].*/, ''));
 
-async function handleYouTube(url) {
-  const videoId = getVideoId(url);
-  if (!videoId) {
-    const err = new Error('Could not extract YouTube video ID from the URL.');
-    err.statusCode = 400;
-    throw err;
-  }
-
-  console.log(`Processing YouTube video: ${videoId}`);
-
+  let transcriptId;
   try {
-    const captionText = await fetchYouTubeCaptions(videoId);
-    if (captionText && captionText.trim().length > 50) {
-      console.log(`Found captions (${captionText.length} chars), parsing recipe...`);
-      const recipe = await parseTranscriptToRecipe(captionText);
-      return { recipe, source: 'youtube_captions' };
-    }
+    transcriptId = await submitTranscript(url);
   } catch (err) {
-    console.log('Caption fetch failed, falling back to audio transcription:', err.message);
+    if (err.statusCode === 422) throw err;
+    const fallback = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
+    fallback.statusCode = 422;
+    throw fallback;
   }
 
-  console.log('No captions found, extracting audio...');
-  const audioPath = await extractYouTubeAudio(url);
-  try {
-    const transcript = await transcribeAudio(audioPath);
-    const recipe = await parseTranscriptToRecipe(transcript);
-    return { recipe, source: 'youtube_audio_transcription' };
-  } finally {
-    cleanupFile(audioPath);
-  }
-}
-
-async function handleGenericVideo(url) {
-  console.log(`Processing generic video URL: ${url}`);
-  const audioPath = await extractGenericAudio(url);
-  try {
-    const transcript = await transcribeAudio(audioPath);
-    const recipe = await parseTranscriptToRecipe(transcript);
-    return { recipe, source: 'video_audio_transcription' };
-  } finally {
-    cleanupFile(audioPath);
-  }
-}
-
-function getCookiesPath() {
-  const p = process.env.YTDLP_COOKIES_PATH || process.env.YTDLP_COOKIES;
-  if (!p || typeof p !== 'string') return null;
-  const trimmed = p.trim();
-  if (!trimmed) return null;
-  return fs.existsSync(trimmed) ? trimmed : null;
-}
-
-/** Copy cookies to a writable temp file so yt-dlp can read and optionally write (avoids read-only /etc/secrets). */
-function copyCookiesToWritable(secretPath) {
-  const tmpPath = path.join(os.tmpdir(), `yt-dlp-cookies-${Date.now()}.txt`);
-  fs.copyFileSync(secretPath, tmpPath);
-  return tmpPath;
-}
-
-function extractYouTubeAudio(url) {
-  return new Promise((resolve, reject) => {
-    const tmpFile = path.join(os.tmpdir(), `yt-audio-${Date.now()}.mp3`);
-
-    const args = [
-      '--js-runtimes', 'node',
-      '--no-playlist',
-      '-x',
-      '--audio-format', 'mp3',
-      '--audio-quality', '9',
-      '--max-filesize', '25m',
-      '--socket-timeout', '30',
-      '-o', tmpFile,
-      url,
-    ];
-
-    const cookiesPath = getCookiesPath();
-    let tmpCookiesPath = null;
-    if (cookiesPath) {
-      tmpCookiesPath = copyCookiesToWritable(cookiesPath);
-      args.push('--cookies', tmpCookiesPath);
-      args.push('--extractor-args', 'youtube:player_client=android');
-      console.log('Using YouTube cookies from YTDLP_COOKIES_PATH (copied to writable temp)');
-    }
-
-    console.log('Downloading audio with yt-dlp...');
-    execFile('yt-dlp', args, { timeout: 120000 }, (error, stdout, stderr) => {
-      if (tmpCookiesPath) cleanupFile(tmpCookiesPath);
-      if (error) {
-        cleanupFile(tmpFile);
-        const stderrStr = (stderr || '').toString();
-        if (stderrStr.includes('Private') || stderrStr.includes('unavailable')) {
-          const e = new Error('This video is private or unavailable.');
-          e.statusCode = 403;
-          reject(e);
-        } else if (stderrStr.includes('bot') || stderrStr.includes('Sign in to confirm')) {
-          const errorLine = stderrStr.split('\n').find(l => l.startsWith('ERROR:'));
-          const detail = errorLine ? errorLine.replace(/^ERROR:\s*/, '').trim() : 'YouTube blocked the request.';
-          const e = new Error(
-            `YouTube is blocking server requests. (${detail}) Re-export cookies: log into youtube.com, use a Netscape-format export (see server/README.md), and update the secret file.`
-          );
-          e.statusCode = 403;
-          reject(e);
-        } else {
-          reject(new Error(`Failed to download YouTube audio: ${error.message}`));
-        }
-        return;
-      }
-
-      const actualFile = findOutputFile(tmpFile);
-      if (!actualFile) {
-        reject(new Error('Audio download completed but output file was not found.'));
-        return;
-      }
-
-      console.log(`Audio downloaded: ${actualFile}`);
-      resolve(actualFile);
-    });
-  });
-}
-
-function findOutputFile(basePath) {
-  if (fs.existsSync(basePath)) return basePath;
-
-  const dir = path.dirname(basePath);
-  const base = path.basename(basePath, path.extname(basePath));
-  const possibleExts = ['.mp3', '.m4a', '.webm', '.opus', '.ogg'];
-  for (const ext of possibleExts) {
-    const candidate = path.join(dir, base + ext);
-    if (fs.existsSync(candidate)) return candidate;
-  }
-  return null;
-}
-
-function extractGenericAudio(url) {
-  return new Promise((resolve, reject) => {
-    const tmpFile = path.join(os.tmpdir(), `vid-audio-${Date.now()}.mp3`);
-
-    ffmpeg(url)
-      .audioCodec('libmp3lame')
-      .audioBitrate(64)
-      .audioChannels(1)
-      .audioFrequency(16000)
-      .duration(600)
-      .noVideo()
-      .format('mp3')
-      .on('end', () => resolve(tmpFile))
-      .on('error', (err) => {
-        cleanupFile(tmpFile);
-        if (err.message.includes('403') || err.message.includes('401')) {
-          const e = new Error('This video is private or requires authentication.');
-          e.statusCode = 403;
-          reject(e);
-        } else {
-          reject(new Error(`Failed to extract audio from video: ${err.message}`));
-        }
-      })
-      .save(tmpFile);
-  });
-}
-
-function cleanupFile(filePath) {
-  try {
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      console.log(`Cleaned up temp file: ${filePath}`);
-    }
-  } catch (e) {
-    console.warn(`Failed to clean up ${filePath}:`, e.message);
-  }
+  const transcriptText = await waitForTranscript(transcriptId);
+  console.log('Transcription completed, parsing recipe with AI...');
+  const recipe = await parseTranscriptToRecipe(transcriptText);
+  return { recipe, source: 'assemblyai' };
 }
 
 module.exports = { parseVideoToRecipe };

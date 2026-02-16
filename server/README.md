@@ -1,6 +1,6 @@
 # Video parsing backend
 
-Runs separately from the Expo app. The app calls this backend over HTTP when the user adds a recipe from a video URL.
+Runs separately from the Expo app. The app sends a video URL to this backend; the backend uses **AssemblyAI** for transcription and existing AI (Anthropic / OpenAI / Gemini) for recipe parsing. No YouTube scraping, no cookies, no ffmpeg/yt-dlp.
 
 ## Run locally
 
@@ -12,14 +12,23 @@ npm start
 
 Runs on port 3001 by default. Set `VIDEO_BACKEND_PORT` to change it.
 
+## Environment variables
+
+- **ASSEMBLYAI_API_KEY** (required) – Your AssemblyAI API key for URL-based transcription.
+- **OPENAI_API_KEY** or **EXPO_PUBLIC_OPENAI_API_KEY** – Used by recipe parsing (Whisper not used for video flow).
+- **ANTHROPIC_API_KEY** / **OPENAI_API_KEY** / **GEMINI_API_KEY** (or `EXPO_PUBLIC_*` variants) – At least one required for recipe parsing (Anthropic → OpenAI → Gemini fallback).
+
 ## Deploy for TestFlight / production
 
-1. Deploy this server to a host that supports Node and has **ffmpeg** and **yt-dlp** installed (e.g. Railway, Render, Fly.io, or a VPS).
-2. Set these env vars on the server: `OPENAI_API_KEY` (or `EXPO_PUBLIC_OPENAI_API_KEY`) for Whisper transcription; optionally the same LLM keys as the app for recipe parsing.
-3. In your **Expo app** (and in EAS env vars for production), set:
-   - **EXPO_PUBLIC_VIDEO_BACKEND_URL** = the public URL of this backend (e.g. `https://your-video-backend.railway.app` or `https://api.yourapp.com`).
+1. Deploy this server to a Node host (e.g. Render, Railway, Fly.io). No ffmpeg or yt-dlp needed.
+2. Set **ASSEMBLYAI_API_KEY** and at least one LLM key (see above) on the server.
+3. In your **Expo app** (and EAS env for production), set:
+   - **EXPO_PUBLIC_VIDEO_BACKEND_URL** = your backend URL (e.g. `https://cookedapp.onrender.com`). No trailing slash.
 
-No trailing slash. The app will call `POST {EXPO_PUBLIC_VIDEO_BACKEND_URL}/parse-video` with `{ "url": "..." }`.
+The app calls `POST {EXPO_PUBLIC_VIDEO_BACKEND_URL}/parse-video` with `{ "url": "<video URL>" }`.
+
+If transcription fails (e.g. unsupported URL or AssemblyAI error), the API returns 422 with:
+`{ "error": "Transcript unavailable. Please paste recipe text manually." }`
 
 ## Privacy & support pages
 
