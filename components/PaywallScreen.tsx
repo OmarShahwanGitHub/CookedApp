@@ -15,6 +15,12 @@ import {
 const PRIVACY_URL = () => getBackendBaseUrl().replace(/\/$/, '');
 const TERMS_URL = () => `${PRIVACY_URL()}/terms.html`;
 
+/** Mock package shown when RevenueCat offerings are empty (sandbox/preview). */
+const MOCK_PACKAGE = {
+  _mock: true as const,
+  product: { title: 'Cooked Pro Monthly', priceString: '$9.99/month' },
+};
+
 interface PaywallScreenProps {
   onDismiss: () => void;
   onSubscribed: () => void;
@@ -46,6 +52,10 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
   };
 
   const handlePurchase = async (pkg: any) => {
+    if (pkg._mock) {
+      Alert.alert('Coming Soon', 'The app is under development and not accepting payments yet.');
+      return;
+    }
     setIsPurchasing(true);
     try {
       const success = await purchasePackage(pkg);
@@ -112,16 +122,16 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
 
         {isLoading ? (
           <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
-        ) : offerings.length > 0 ? (
+        ) : (
           <View style={styles.offerings}>
-            {offerings.map((pkg: any, index: number) => (
+            {(offerings.length > 0 ? offerings : [MOCK_PACKAGE]).map((pkg: any, index: number) => (
               <TouchableOpacity
-                key={index}
+                key={pkg._mock ? 'mock' : index}
                 style={styles.offeringButton}
                 onPress={() => handlePurchase(pkg)}
-                disabled={isPurchasing}
+                disabled={!pkg._mock && isPurchasing}
               >
-                {isPurchasing ? (
+                {!pkg._mock && isPurchasing ? (
                   <ActivityIndicator color={Colors.white} />
                 ) : (
                   <>
@@ -131,18 +141,6 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
                 )}
               </TouchableOpacity>
             ))}
-          </View>
-        ) : (
-          <View style={styles.noOfferings}>
-            <Lock size={24} color={Colors.textLight} />
-            <Text style={styles.noOfferingsText}>
-              {isRevenueCatConfigured()
-                ? 'No subscription plans are available yet. Create products in App Store Connect, add them to an offering in the RevenueCat dashboard, and ensure your app bundle ID matches.'
-                : 'Add EXPO_PUBLIC_REVENUECAT_API_KEY to your .env (local) or EAS environment variables (production) to enable purchases.'}
-            </Text>
-            {offeringsDebug ? (
-              <Text style={styles.debugText}>{offeringsDebug}</Text>
-            ) : null}
           </View>
         )}
 

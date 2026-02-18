@@ -1,18 +1,19 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Plus, ChefHat, Clock, BookOpen } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
 import { useRecipes, useRecipesByStatus } from '@/context/RecipeContext';
+import { canAddRecipe } from '@/services/subscriptionService';
 import RecipeCard from '@/components/RecipeCard';
 import EmptyState from '@/components/EmptyState';
+import PaywallScreen from '@/components/PaywallScreen';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { recipes, isLoading } = useRecipes();
   const savedRecipes = useRecipesByStatus('saved');
+  const [showPaywall, setShowPaywall] = useState(false);
   const recentRecipes = [...recipes].sort((a, b) => 
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   ).slice(0, 4);
@@ -21,7 +22,12 @@ export default function HomeScreen() {
     new Date(a.cookDate! + 'T00:00:00').getTime() - new Date(b.cookDate! + 'T00:00:00').getTime()
   ).slice(0, 3);
 
-  const handleAddRecipe = () => {
+  const handleAddRecipe = async () => {
+    const allowed = await canAddRecipe(recipes.length);
+    if (!allowed) {
+      setShowPaywall(true);
+      return;
+    }
     router.push('/add-recipe');
   };
 
@@ -34,6 +40,18 @@ export default function HomeScreen() {
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Loading your recipes...</Text>
       </View>
+    );
+  }
+
+  if (showPaywall) {
+    return (
+      <PaywallScreen
+        onDismiss={() => setShowPaywall(false)}
+        onSubscribed={() => {
+          setShowPaywall(false);
+          router.push('/add-recipe');
+        }}
+      />
     );
   }
 
