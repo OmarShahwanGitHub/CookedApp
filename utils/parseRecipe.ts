@@ -49,6 +49,11 @@ function getVideoBackendUrl(): string {
   return 'http://localhost:8081';
 }
 
+/** Base URL for app-hosted pages (privacy, terms). Same as video backend in production. */
+export function getBackendBaseUrl(): string {
+  return getVideoBackendUrl();
+}
+
 export async function parseRecipe(
   input: string | string[],
   inputType: InputType

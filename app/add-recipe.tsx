@@ -10,6 +10,7 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, Stack } from 'expo-router';
 import { X, Type, Link2, Image as ImageIcon, Video, ChevronRight, Trash2 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,6 +18,8 @@ import Colors from '@/constants/colors';
 import { useRecipes } from '@/context/RecipeContext';
 import { RecipeSource, ParsedRecipeData, Ingredient, RecipeStep, RecipeCategory } from '@/types/recipe';
 import { parseRecipe, generateId, getVideoParseErrorCode } from '@/utils/parseRecipe';
+
+const AI_CONSENT_KEY = '@cooked/ai_parsing_consent';
 import { canAddRecipe } from '@/services/subscriptionService';
 import { RECIPE_CATEGORIES } from '@/constants/categories';
 import PaywallScreen from '@/components/PaywallScreen';
@@ -67,31 +70,9 @@ export default function AddRecipeScreen() {
     setSelectedImages(prev => prev.filter(img => img !== uri));
   };
 
-  const handleParse = async () => {
+  const doParse = async (input: string | string[], inputType: 'text' | 'url' | 'image' | 'video') => {
     setIsProcessing(true);
-    
     try {
-      let input: string | string[];
-      let inputType: 'text' | 'url' | 'image' | 'video';
-
-      if (mode === 'text' && textInput.trim()) {
-        input = textInput;
-        inputType = 'text';
-      } else if (mode === 'link' && linkInput.trim()) {
-        input = linkInput;
-        inputType = 'url';
-      } else if (mode === 'image' && selectedImages.length > 0) {
-        input = selectedImages;
-        inputType = 'image';
-      } else if (mode === 'video' && videoInput.trim()) {
-        input = videoInput;
-        inputType = 'video';
-      } else {
-        Alert.alert('Missing Input', 'Please provide recipe content to parse.');
-        setIsProcessing(false);
-        return;
-      }
-
       const data = await parseRecipe(input, inputType);
 
       setParsedData(data);
@@ -120,6 +101,49 @@ export default function AddRecipeScreen() {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleParse = async () => {
+    let input: string | string[];
+    let inputType: 'text' | 'url' | 'image' | 'video';
+
+    if (mode === 'text' && textInput.trim()) {
+      input = textInput;
+      inputType = 'text';
+    } else if (mode === 'link' && linkInput.trim()) {
+      input = linkInput;
+      inputType = 'url';
+    } else if (mode === 'image' && selectedImages.length > 0) {
+      input = selectedImages;
+      inputType = 'image';
+    } else if (mode === 'video' && videoInput.trim()) {
+      input = videoInput;
+      inputType = 'video';
+    } else {
+      Alert.alert('Missing Input', 'Please provide recipe content to parse.');
+      return;
+    }
+
+    const hasConsent = await AsyncStorage.getItem(AI_CONSENT_KEY);
+    if (hasConsent === 'true') {
+      doParse(input, inputType);
+      return;
+    }
+
+    Alert.alert(
+      'Recipe Parsing Uses AI',
+      'To extract ingredients and steps, we send this content (text, link, image, or video URL) to a third-party AI provider (Anthropic, OpenAI, or Google) for processing only. We do not store your recipe content or use it for advertising. Your data is handled according to our Privacy Policy.\n\nBy tapping "I Agree" you consent to this use.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'I Agree',
+          onPress: async () => {
+            await AsyncStorage.setItem(AI_CONSENT_KEY, 'true');
+            doParse(input, inputType);
+          },
+        },
+      ]
+    );
   };
 
   const handleUpdateIngredient = (id: string, field: 'name' | 'quantity', value: string) => {

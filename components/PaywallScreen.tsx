@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Linking } from 'react-native';
 import { Lock, Crown, Check } from 'lucide-react-native';
 import Colors from '@/constants/colors';
+import { getBackendBaseUrl } from '@/utils/parseRecipe';
 import {
   getOfferings,
   purchasePackage,
@@ -10,6 +11,9 @@ import {
   isRevenueCatConfigured,
   getLastOfferingsDebug,
 } from '@/services/subscriptionService';
+
+const PRIVACY_URL = () => getBackendBaseUrl().replace(/\/$/, '');
+const TERMS_URL = () => `${PRIVACY_URL()}/terms.html`;
 
 interface PaywallScreenProps {
   onDismiss: () => void;
@@ -153,6 +157,16 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
             <Text style={styles.restoreText}>Restore Purchases</Text>
           )}
         </TouchableOpacity>
+
+        <View style={styles.legalLinks}>
+          <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL())}>
+            <Text style={styles.legalLinkText}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalSeparator}> · </Text>
+          <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL())}>
+            <Text style={styles.legalLinkText}>Terms of Use (EULA)</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -265,5 +279,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.primary,
     fontWeight: '500' as const,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    gap: 4,
+  },
+  legalLinkText: {
+    fontSize: 14,
+    color: Colors.primary,
+    textDecorationLine: 'underline',
+    fontWeight: '500' as const,
+  },
+  legalSeparator: {
+    fontSize: 14,
+    color: Colors.textSecondary,
   },
 });
