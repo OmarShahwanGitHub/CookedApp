@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Linking } from 'react-native';
-import { Lock, Crown, Check } from 'lucide-react-native';
+import { Lock, Crown, Check, X } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { getBackendBaseUrl } from '@/utils/parseRecipe';
 import {
@@ -101,6 +101,12 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        <View style={styles.closeRow}>
+          <View style={styles.closeSpacer} />
+          <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <X size={24} color={Colors.text} />
+          </TouchableOpacity>
+        </View>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
             <Crown size={48} color={Colors.primary} />
@@ -174,6 +180,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  closeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 8,
+  },
+  closeSpacer: {
+    width: 24,
   },
   scrollView: {
     flex: 1,
