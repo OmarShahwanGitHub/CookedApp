@@ -1,19 +1,34 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus, ChefHat, Clock, BookOpen } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Plus, ChefHat, Clock, BookOpen, Info } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useRecipes, useRecipesByStatus } from '@/context/RecipeContext';
-import { canAddRecipe } from '@/services/subscriptionService';
+import { canAddRecipe, checkSubscriptionStatus } from '@/services/subscriptionService';
 import RecipeCard from '@/components/RecipeCard';
 import EmptyState from '@/components/EmptyState';
 import PaywallScreen from '@/components/PaywallScreen';
 
+const TAB_BAR_HEIGHT = 56;
+
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { recipes, isLoading } = useRecipes();
   const savedRecipes = useRecipesByStatus('saved');
   const [showPaywall, setShowPaywall] = useState(false);
+  const [freePlanCount, setFreePlanCount] = useState<{ current: number; limit: number } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    checkSubscriptionStatus().then((status) => {
+      if (!cancelled && !status.isSubscribed)
+        setFreePlanCount({ current: status.currentCount, limit: status.limit });
+      else if (!cancelled) setFreePlanCount(null);
+    });
+    return () => { cancelled = true; };
+  }, [recipes.length]);
   const recentRecipes = [...recipes].sort((a, b) => 
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   ).slice(0, 4);
@@ -33,6 +48,14 @@ export default function HomeScreen() {
 
   const handleRecipePress = (id: string) => {
     router.push(`/recipe/${id}`);
+  };
+
+  const showLimitInfo = () => {
+    Alert.alert(
+      'Free recipe limit',
+      'You can add up to 10 recipes on the free plan. This count is based on how many recipes you\'ve ever created—deleting or reinstalling the app won\'t reset it. Upgrade to Pro for unlimited recipes.',
+      [{ text: 'OK' }]
+    );
   };
 
   if (isLoading) {
@@ -55,11 +78,27 @@ export default function HomeScreen() {
     );
   }
 
+  const badgeBottom = insets.bottom + TAB_BAR_HEIGHT + 10;
+
   return (
     <View style={styles.container}>
+      {freePlanCount != null && (
+        <View style={[styles.countBadge, { bottom: badgeBottom }]}>
+          <Text style={styles.countBadgeText}>
+            {freePlanCount.current}/{freePlanCount.limit} recipes used
+          </Text>
+          <TouchableOpacity
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={showLimitInfo}
+            style={styles.countBadgeInfo}
+          >
+            <Info size={14} color={Colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      )}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, freePlanCount != null && { paddingBottom: 100 }]}
         showsVerticalScrollIndicator={false}
       >
         <TouchableOpacity
@@ -158,6 +197,28 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
+  },
+  countBadge: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: Colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 6,
+  },
+  countBadgeText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+  countBadgeInfo: {
+    padding: 2,
   },
   addButton: {
     backgroundColor: Colors.primary,

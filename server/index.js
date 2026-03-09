@@ -50,6 +50,13 @@ app.post('/parse-video', async (req, res) => {
   }
 });
 
+// Force-update: app checks this and blocks if installed version is below min.
+// Set MIN_APP_VERSION when you release a breaking build (e.g. "1.1.0").
+app.get('/app-version', (req, res) => {
+  const min = process.env.MIN_APP_VERSION || '0.0.0';
+  return res.json({ min_version: min });
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });

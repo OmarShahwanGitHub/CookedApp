@@ -43,6 +43,11 @@ The app enforces a 10-recipe free limit by **lifetime recipes created**, not by 
 
 Counts are stored in memory on this server. For production you may want to persist them (e.g. Redis or a DB) so they survive restarts.
 
+### Force update (minimum app version)
+
+- **GET** `/app-version` – returns `{ "min_version": "1.0.0" }`. The app blocks usage until updated if its version is below this.
+- Set **MIN_APP_VERSION** on the server when you release a breaking build (e.g. `MIN_APP_VERSION=1.1.0`). Default is `0.0.0` (no forced update).
+
 If transcription fails (e.g. unsupported URL or AssemblyAI error), the API returns 422 with:
 `{ "error": "Transcript unavailable. Please paste recipe text manually." }`
 

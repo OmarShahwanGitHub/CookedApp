@@ -52,7 +52,9 @@
       "router": {},
       "eas": {
         "projectId": "a529db8c-cce6-40dd-a07a-14a46a3ae4c9"
-      }
+      },
+      "appStoreId": null,
+      "playStorePackage": "com.cooked.recipe"
     }
   }
 }
