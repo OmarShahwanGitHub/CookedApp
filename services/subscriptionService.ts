@@ -1,7 +1,10 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FREE_RECIPE_LIMIT = 10;
+const LIFETIME_COUNT_KEY = 'cooked_lifetime_recipe_count';
+const ANON_USER_ID_KEY = 'cooked_anon_user_id';
 
 let Purchases: any = null;
 
@@ -64,6 +67,85 @@ export function getRecipeLimit(): number {
   return FREE_RECIPE_LIMIT;
 }
 
+/** Stable ID for this install (persists in Keychain on iOS across reinstall when possible). Used to sync lifetime recipe count with backend. */
+export async function getStableUserId(): Promise<string> {
+  try {
+    if (Platform.OS === 'web') {
+      let id = await AsyncStorage.getItem(ANON_USER_ID_KEY);
+      if (!id) {
+        id = 'web_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        await AsyncStorage.setItem(ANON_USER_ID_KEY, id);
+      }
+      return id;
+    }
+    const SecureStore = require('expo-secure-store').default;
+    let id = await SecureStore.getItemAsync(ANON_USER_ID_KEY);
+    if (!id) {
+      const uuid = 'anon_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      await SecureStore.setItemAsync(ANON_USER_ID_KEY, uuid);
+      id = uuid;
+    }
+    return id;
+  } catch {
+    const fallback = 'local_' + Math.random().toString(36).slice(2);
+    return fallback;
+  }
+}
+
+function getBackendBaseUrl(): string | null {
+  const env = process.env.EXPO_PUBLIC_VIDEO_BACKEND_URL;
+  if (env && typeof env === 'string' && env.trim()) return env.trim().replace(/\/$/, '');
+  const hostUri = Constants.expoConfig?.hostUri ?? (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ?? (Constants as any).manifest?.debuggerHost;
+  if (hostUri) {
+    const protocol = String(hostUri).includes('exp.direct') ? 'https' : 'http';
+    return `${protocol}://${hostUri}`;
+  }
+  return null;
+}
+
+/** Lifetime number of recipes ever created (never decreases on delete). Used to enforce free limit and survive reinstall when synced to backend. */
+export async function getLifetimeRecipeCount(): Promise<number> {
+  let local = 0;
+  try {
+    const s = await AsyncStorage.getItem(LIFETIME_COUNT_KEY);
+    if (s != null) local = Math.max(0, parseInt(s, 10) || 0);
+  } catch {}
+
+  const base = getBackendBaseUrl();
+  if (base) {
+    try {
+      const userId = await getStableUserId();
+      const res = await fetch(`${base}/recipe-count?user_id=${encodeURIComponent(userId)}`, { method: 'GET' });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const server = typeof data?.count === 'number' ? data.count : 0;
+        return Math.max(local, server);
+      }
+    } catch {}
+  }
+  return local;
+}
+
+/** Call this when the user successfully adds a new recipe. Increments local and (if backend configured) server count. */
+export async function incrementLifetimeRecipeCount(): Promise<void> {
+  const next = (await getLifetimeRecipeCount()) + 1;
+  try {
+    await AsyncStorage.setItem(LIFETIME_COUNT_KEY, String(next));
+  } catch {}
+
+  const base = getBackendBaseUrl();
+  if (base) {
+    try {
+      const userId = await getStableUserId();
+      await fetch(`${base}/recipe-count`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      });
+    } catch {}
+  }
+}
+
 export async function checkSubscriptionStatus(): Promise<{
   isSubscribed: boolean;
   canAddRecipe: boolean;
@@ -90,20 +172,20 @@ export async function checkSubscriptionStatus(): Promise<{
     }
   }
 
+  const currentCount = await getLifetimeRecipeCount();
   return {
     isSubscribed: false,
-    canAddRecipe: true,
-    currentCount: 0,
+    canAddRecipe: currentCount < FREE_RECIPE_LIMIT,
+    currentCount,
     limit: FREE_RECIPE_LIMIT,
   };
 }
 
-export async function canAddRecipe(currentRecipeCount: number): Promise<boolean> {
+/** Use lifetime recipe count so deleting recipes cannot bypass the free limit. No argument needed. */
+export async function canAddRecipe(): Promise<boolean> {
   const status = await checkSubscriptionStatus();
-
   if (status.isSubscribed) return true;
-
-  return currentRecipeCount < FREE_RECIPE_LIMIT;
+  return status.currentCount < FREE_RECIPE_LIMIT;
 }
 
 let lastOfferingsDebug: string = '';

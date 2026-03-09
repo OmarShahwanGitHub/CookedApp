@@ -34,6 +34,15 @@ Runs on port 3001 by default. Set `VIDEO_BACKEND_PORT` to change it.
 
 The app calls `POST {EXPO_PUBLIC_VIDEO_BACKEND_URL}/parse-video` with `{ "url": "<video URL>" }`.
 
+### Recipe count (free tier limit)
+
+The app enforces a 10-recipe free limit by **lifetime recipes created**, not by current list length (so deleting recipes doesn’t reset the limit). To keep that count across **reinstall**, the app syncs with this backend using a stable anonymous user ID (e.g. from device Keychain).
+
+- **GET** `/recipe-count?user_id=<id>` – returns `{ "count": number }` for that user.
+- **POST** `/recipe-count` – body `{ "user_id": "<id>" }` – increments that user’s count and returns the new count.
+
+Counts are stored in memory on this server. For production you may want to persist them (e.g. Redis or a DB) so they survive restarts.
+
 If transcription fails (e.g. unsupported URL or AssemblyAI error), the API returns 422 with:
 `{ "error": "Transcript unavailable. Please paste recipe text manually." }`
 

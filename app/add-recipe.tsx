@@ -180,7 +180,7 @@ export default function AddRecipeScreen() {
       return;
     }
 
-    const allowed = await canAddRecipe(recipes.length);
+    const allowed = await canAddRecipe();
     if (!allowed) {
       setShowPaywall(true);
       return;

@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BookOpen, ChefHat, Filter } from 'lucide-react-native';
+import { BookOpen, Info } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useRecipes } from '@/context/RecipeContext';
 import { RecipeCategory, RecipeStatus } from '@/types/recipe';
-import { RECIPE_CATEGORIES, getCategoryByValue } from '@/constants/categories';
+import { RECIPE_CATEGORIES } from '@/constants/categories';
 import RecipeCard from '@/components/RecipeCard';
 import EmptyState from '@/components/EmptyState';
+import { checkSubscriptionStatus } from '@/services/subscriptionService';
 
 type FilterType = 'all' | RecipeStatus;
 
@@ -16,6 +17,17 @@ export default function LibraryScreen() {
   const { recipes } = useRecipes();
   const [statusFilter, setStatusFilter] = useState<FilterType>('all');
   const [categoryFilter, setCategoryFilter] = useState<RecipeCategory | 'all'>('all');
+  const [freePlanCount, setFreePlanCount] = useState<{ current: number; limit: number } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    checkSubscriptionStatus().then((status) => {
+      if (!cancelled && !status.isSubscribed)
+        setFreePlanCount({ current: status.currentCount, limit: status.limit });
+      else if (!cancelled) setFreePlanCount(null);
+    });
+    return () => { cancelled = true; };
+  }, [recipes.length]);
 
   const filteredRecipes = useMemo(() => {
     return recipes.filter(r => {
@@ -35,8 +47,30 @@ export default function LibraryScreen() {
     { value: 'cooked', label: 'Cooked' },
   ];
 
+  const showLimitInfo = () => {
+    Alert.alert(
+      'Free recipe limit',
+      'You can add up to 10 recipes on the free plan. This count is based on how many recipes you\'ve ever created—deleting or reinstalling the app won\'t reset it. Upgrade to Pro for unlimited recipes.',
+      [{ text: 'OK' }]
+    );
+  };
+
   return (
     <View style={styles.container}>
+      {freePlanCount != null && (
+        <View style={styles.countBadge}>
+          <Text style={styles.countBadgeText}>
+            {freePlanCount.current}/{freePlanCount.limit} recipes used
+          </Text>
+          <TouchableOpacity
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={showLimitInfo}
+            style={styles.countBadgeInfo}
+          >
+            <Info size={14} color={Colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      )}
       <View style={styles.filtersContainer}>
         <ScrollView
           horizontal
@@ -144,6 +178,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  countBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: Colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 6,
+  },
+  countBadgeText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+  countBadgeInfo: {
+    padding: 2,
   },
   filtersContainer: {
     paddingTop: 8,

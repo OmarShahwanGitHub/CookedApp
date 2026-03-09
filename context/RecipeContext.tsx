@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { Recipe, Ingredient, RecipeCategory, RecipeStatus } from '@/types/recipe';
 import { generateId } from '@/utils/parseRecipe';
+import { incrementLifetimeRecipeCount } from '@/services/subscriptionService';
 
 const RECIPES_STORAGE_KEY = 'cooked_recipes';
 
@@ -72,6 +73,7 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
     const updated = [...recipes, newRecipe];
     setRecipes(updated);
     syncRecipes(updated);
+    incrementLifetimeRecipeCount().catch(() => {});
     return newRecipe;
   }, [recipes, syncRecipes]);
 

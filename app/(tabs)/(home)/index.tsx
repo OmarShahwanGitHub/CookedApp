@@ -23,7 +23,7 @@ export default function HomeScreen() {
   ).slice(0, 3);
 
   const handleAddRecipe = async () => {
-    const allowed = await canAddRecipe(recipes.length);
+    const allowed = await canAddRecipe();
     if (!allowed) {
       setShowPaywall(true);
       return;
