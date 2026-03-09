@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 const FREE_RECIPE_LIMIT = 10;
 
@@ -9,6 +10,11 @@ async function getPurchases() {
 
   if (Platform.OS === 'web') {
     console.warn('RevenueCat is not available on web');
+    return null;
+  }
+
+  // Expo Go doesn't include react-native-purchases; skip so the app still runs (mock paywall only).
+  if (Constants.appOwnership === 'expo') {
     return null;
   }
 

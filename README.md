@@ -72,7 +72,11 @@ This project is built with the most popular native mobile cross-platform technic
 
 1. **iOS**: Download the [Rork app from the App Store](https://apps.apple.com/app/rork) or [Expo Go](https://apps.apple.com/app/expo-go/id982107779)
 2. **Android**: Download the [Expo Go app from Google Play](https://play.google.com/store/apps/details?id=host.exp.exponent)
-3. Run `bun run start` and scan the QR code from your development server
+3. Run the dev server and open in **Expo Go** on your phone:
+   ```bash
+   npx expo start --go --tunnel
+   ```
+   Then scan the QR code **with the Expo Go app** (not the device camera). The `--go` flag is required because this project includes `expo-dev-client`; without it, the QR code targets a development build instead of Expo Go. Use `--lan` instead of `--tunnel` if your phone and computer are on the same Wi‑Fi.
 
 ### **In your browser**
 
@@ -295,9 +299,9 @@ For mobile apps, you'll configure your app's deep linking scheme in `app.json`.
 
 ### **App not loading on device?**
 
-1. Make sure your phone and computer are on the same WiFi network
-2. Try using tunnel mode: `bun start -- --tunnel`
-3. Check if your firewall is blocking the connection
+1. Use Expo Go explicitly: `npx expo start --go --tunnel` (or `--go --lan` if on same Wi‑Fi), then scan the QR code **inside the Expo Go app**.
+2. Make sure your phone and computer are on the same WiFi network when using `--lan`.
+3. Check if your firewall is blocking the connection.
 
 ### **Build failing?**
 
