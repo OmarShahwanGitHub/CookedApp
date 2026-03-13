@@ -338,7 +338,6 @@ export default function AddRecipeScreen() {
         textAlignVertical="top"
         testID="text-input"
       />
-      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
       <TouchableOpacity
         style={[styles.parseButton, !textInput.trim() && styles.parseButtonDisabled]}
         onPress={handleParse}
@@ -350,6 +349,7 @@ export default function AddRecipeScreen() {
           <Text style={styles.parseButtonText}>Parse Recipe</Text>
         )}
       </TouchableOpacity>
+      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
     </View>
   );
 
@@ -366,7 +366,6 @@ export default function AddRecipeScreen() {
         keyboardType="url"
         testID="link-input"
       />
-      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
       <TouchableOpacity
         style={[styles.parseButton, !linkInput.trim() && styles.parseButtonDisabled]}
         onPress={handleParse}
@@ -378,6 +377,7 @@ export default function AddRecipeScreen() {
           <Text style={styles.parseButtonText}>Import Recipe</Text>
         )}
       </TouchableOpacity>
+      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
     </View>
   );
 
@@ -406,7 +406,6 @@ export default function AddRecipeScreen() {
         </ScrollView>
       )}
 
-      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
       <TouchableOpacity
         style={[styles.parseButton, selectedImages.length === 0 && styles.parseButtonDisabled]}
         onPress={handleParse}
@@ -418,6 +417,7 @@ export default function AddRecipeScreen() {
           <Text style={styles.parseButtonText}>Parse Images</Text>
         )}
       </TouchableOpacity>
+      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
     </View>
   );
 
@@ -434,7 +434,6 @@ export default function AddRecipeScreen() {
         keyboardType="url"
         testID="video-input"
       />
-      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
       <TouchableOpacity
         style={[styles.parseButton, !videoInput.trim() && styles.parseButtonDisabled]}
         onPress={handleParse}
@@ -446,6 +445,7 @@ export default function AddRecipeScreen() {
           <Text style={styles.parseButtonText}>Import from Video</Text>
         )}
       </TouchableOpacity>
+      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
     </View>
   );
 

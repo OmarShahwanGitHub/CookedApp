@@ -17,6 +17,23 @@ function isYouTubeUrl(url) {
   return /(?:youtube\.com|youtu\.be)/i.test(url);
 }
 
+/**
+ * Normalize YouTube URL to standard watch form. TranscriptAPI and many APIs expect watch?v=ID.
+ * Shorts: youtube.com/shorts/VIDEO_ID -> youtube.com/watch?v=VIDEO_ID
+ * youtu.be/ID -> youtube.com/watch?v=ID
+ */
+function normalizeYouTubeUrl(url) {
+  if (!url || typeof url !== 'string') return url;
+  const u = url.trim();
+  const shortsMatch = u.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i);
+  if (shortsMatch) return `https://www.youtube.com/watch?v=${shortsMatch[1]}`;
+  const beMatch = u.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/i);
+  if (beMatch) return `https://www.youtube.com/watch?v=${beMatch[1]}`;
+  const watchMatch = u.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/i);
+  if (watchMatch) return `https://www.youtube.com/watch?v=${watchMatch[1]}`;
+  return u;
+}
+
 /** Facebook, Instagram, Pinterest, TikTok, X/Twitter, Dailymotion, Vimeo, Loom, etc. */
 function isSocialVideoUrl(url) {
   const host = (url && typeof url === 'string') ? url.toLowerCase() : '';
@@ -165,14 +182,16 @@ async function fetchYouTubeTranscript(videoUrl) {
     method: 'GET',
     headers: { Authorization: `Bearer ${apiKey}` },
   });
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    console.warn('TranscriptAPI YouTube error:', res.status, data);
     const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
     err.statusCode = 422;
     throw err;
   }
-  const data = await res.json().catch(() => ({}));
   const segments = data.transcript;
   if (!Array.isArray(segments) || segments.length === 0) {
+    console.warn('TranscriptAPI: no transcript segments (video may have no captions or unsupported language)', data);
     const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
     err.statusCode = 422;
     throw err;
@@ -245,9 +264,10 @@ async function parseVideoToRecipe(url, outputLanguage) {
   validateUrl(url);
 
   if (isYouTubeUrl(url)) {
-    console.log('Fetching YouTube transcript via TranscriptAPI:', url.replace(/[#?].*/, ''));
+    const normalizedUrl = normalizeYouTubeUrl(url);
+    console.log('Fetching YouTube transcript via TranscriptAPI:', normalizedUrl.replace(/[#?].*/, ''));
     try {
-      const transcriptText = await fetchYouTubeTranscript(url);
+      const transcriptText = await fetchYouTubeTranscript(normalizedUrl);
       console.log('YouTube transcript received, parsing recipe with AI...');
       const recipe = await parseTranscriptToRecipe(transcriptText, outputLanguage);
       return { recipe, source: 'transcriptapi' };
