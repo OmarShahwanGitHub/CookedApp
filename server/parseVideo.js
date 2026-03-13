@@ -241,7 +241,7 @@ async function fetchSocialVideoTranscript(videoUrl) {
   return text;
 }
 
-async function parseVideoToRecipe(url) {
+async function parseVideoToRecipe(url, outputLanguage) {
   validateUrl(url);
 
   if (isYouTubeUrl(url)) {
@@ -249,7 +249,7 @@ async function parseVideoToRecipe(url) {
     try {
       const transcriptText = await fetchYouTubeTranscript(url);
       console.log('YouTube transcript received, parsing recipe with AI...');
-      const recipe = await parseTranscriptToRecipe(transcriptText);
+      const recipe = await parseTranscriptToRecipe(transcriptText, outputLanguage);
       return { recipe, source: 'transcriptapi' };
     } catch (err) {
       if (err.statusCode === 422) throw err;
@@ -264,7 +264,7 @@ async function parseVideoToRecipe(url) {
     try {
       const transcriptText = await fetchSocialVideoTranscript(url);
       console.log('Social video transcript received, parsing recipe with AI...');
-      const recipe = await parseTranscriptToRecipe(transcriptText);
+      const recipe = await parseTranscriptToRecipe(transcriptText, outputLanguage);
       return { recipe, source: 'apify' };
     } catch (err) {
       if (err.statusCode === 422 || err.statusCode === 408) throw err;
@@ -288,7 +288,7 @@ async function parseVideoToRecipe(url) {
 
   const transcriptText = await waitForTranscript(transcriptId);
   console.log('Transcription completed, parsing recipe with AI...');
-  const recipe = await parseTranscriptToRecipe(transcriptText);
+  const recipe = await parseTranscriptToRecipe(transcriptText, outputLanguage);
   return { recipe, source: 'assemblyai' };
 }
 

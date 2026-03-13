@@ -9,15 +9,18 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, Stack } from 'expo-router';
-import { X, Type, Link2, Image as ImageIcon, Video, ChevronRight, Trash2 } from 'lucide-react-native';
+import { X, Type, Link2, Image as ImageIcon, Video, ChevronRight, ChevronDown, Trash2 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
 import { useRecipes } from '@/context/RecipeContext';
 import { RecipeSource, ParsedRecipeData, Ingredient, RecipeStep, RecipeCategory } from '@/types/recipe';
 import { parseRecipe, generateId, getVideoParseErrorCode } from '@/utils/parseRecipe';
+import { OUTPUT_LANGUAGES, DEFAULT_OUTPUT_LANGUAGE, type OutputLanguage } from '@/constants/outputLanguages';
 
 const AI_CONSENT_KEY = '@cooked/ai_parsing_consent';
 import { canAddRecipe } from '@/services/subscriptionService';
@@ -45,6 +48,8 @@ export default function AddRecipeScreen() {
   const [category, setCategory] = useState<RecipeCategory>('other');
   const [cookDate, setCookDate] = useState<string>('');
   const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [outputLanguage, setOutputLanguage] = useState<OutputLanguage>(DEFAULT_OUTPUT_LANGUAGE);
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
 
   const handleClose = () => {
     router.back();
@@ -70,10 +75,57 @@ export default function AddRecipeScreen() {
     setSelectedImages(prev => prev.filter(img => img !== uri));
   };
 
+  const renderConvertToRow = () => (
+    <>
+      <Text style={styles.convertToLabel}>Convert to:</Text>
+      <TouchableOpacity
+        style={styles.convertToDropdown}
+        onPress={() => setShowLanguagePicker(true)}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.convertToDropdownText}>{outputLanguage}</Text>
+        <ChevronDown size={20} color={Colors.textSecondary} />
+      </TouchableOpacity>
+      <Modal
+        visible={showLanguagePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLanguagePicker(false)}
+      >
+        <Pressable style={styles.languageModalOverlay} onPress={() => setShowLanguagePicker(false)}>
+          <Pressable style={styles.languageModalContent} onPress={e => e.stopPropagation()}>
+            <View style={styles.languageModalHeader}>
+              <Text style={styles.languageModalTitle}>Output language</Text>
+              <TouchableOpacity onPress={() => setShowLanguagePicker(false)} hitSlop={12}>
+                <X size={24} color={Colors.text} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.languageModalList} keyboardShouldPersistTaps="handled">
+              {OUTPUT_LANGUAGES.map(lang => (
+                <TouchableOpacity
+                  key={lang}
+                  style={[styles.languageOption, outputLanguage === lang && styles.languageOptionActive]}
+                  onPress={() => {
+                    setOutputLanguage(lang);
+                    setShowLanguagePicker(false);
+                  }}
+                >
+                  <Text style={[styles.languageOptionText, outputLanguage === lang && styles.languageOptionTextActive]}>
+                    {lang}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+
   const doParse = async (input: string | string[], inputType: 'text' | 'url' | 'image' | 'video') => {
     setIsProcessing(true);
     try {
-      const data = await parseRecipe(input, inputType);
+      const data = await parseRecipe(input, inputType, { outputLanguage });
 
       setParsedData(data);
       setTitle(data.title);
@@ -268,6 +320,8 @@ export default function AddRecipeScreen() {
         </View>
         <ChevronRight size={20} color={Colors.textLight} />
       </TouchableOpacity>
+
+      <Text style={styles.modeLanguageNote}>Accepts recipes in any language.</Text>
     </View>
   );
 
@@ -284,6 +338,7 @@ export default function AddRecipeScreen() {
         textAlignVertical="top"
         testID="text-input"
       />
+      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
       <TouchableOpacity
         style={[styles.parseButton, !textInput.trim() && styles.parseButtonDisabled]}
         onPress={handleParse}
@@ -311,6 +366,7 @@ export default function AddRecipeScreen() {
         keyboardType="url"
         testID="link-input"
       />
+      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
       <TouchableOpacity
         style={[styles.parseButton, !linkInput.trim() && styles.parseButtonDisabled]}
         onPress={handleParse}
@@ -350,6 +406,7 @@ export default function AddRecipeScreen() {
         </ScrollView>
       )}
 
+      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
       <TouchableOpacity
         style={[styles.parseButton, selectedImages.length === 0 && styles.parseButtonDisabled]}
         onPress={handleParse}
@@ -377,6 +434,7 @@ export default function AddRecipeScreen() {
         keyboardType="url"
         testID="video-input"
       />
+      <View style={styles.convertToRow}>{renderConvertToRow()}</View>
       <TouchableOpacity
         style={[styles.parseButton, !videoInput.trim() && styles.parseButtonDisabled]}
         onPress={handleParse}
@@ -620,6 +678,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textSecondary,
   },
+  modeLanguageNote: {
+    fontSize: 13,
+    color: Colors.textLight,
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 8,
+  },
   inputContainer: {
     gap: 16,
   },
@@ -660,6 +725,74 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: Colors.white,
+  },
+  convertToRow: {
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  convertToLabel: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: Colors.textSecondary,
+    marginBottom: 8,
+  },
+  convertToDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  convertToDropdownText: {
+    fontSize: 15,
+    color: Colors.text,
+  },
+  languageModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  languageModalContent: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    maxHeight: '70%',
+  },
+  languageModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  languageModalTitle: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: Colors.text,
+  },
+  languageModalList: {
+    maxHeight: 320,
+    padding: 8,
+  },
+  languageOption: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  languageOptionActive: {
+    backgroundColor: Colors.surfaceAlt,
+  },
+  languageOptionText: {
+    fontSize: 16,
+    color: Colors.text,
+  },
+  languageOptionTextActive: {
+    fontWeight: '600' as const,
+    color: Colors.primary,
   },
   imagePickerButton: {
     flexDirection: 'row',

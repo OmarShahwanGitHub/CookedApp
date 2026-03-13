@@ -33,14 +33,14 @@ app.post('/recipe-count', (req, res) => {
 });
 
 app.post('/parse-video', async (req, res) => {
-  const { url } = req.body;
+  const { url, output_language: outputLanguage } = req.body || {};
 
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ error: 'A valid video URL is required.' });
   }
 
   try {
-    const result = await parseVideoToRecipe(url.trim());
+    const result = await parseVideoToRecipe(url.trim(), outputLanguage);
     return res.json(result);
   } catch (err) {
     console.error('Video parse error:', err);

@@ -2,7 +2,7 @@ import { ParsedRecipeData } from '@/types/recipe';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
 
-const RECIPE_PARSE_PROMPT = `You are a recipe parser. Extract the following from the text below and return valid JSON only (no markdown, no explanation):
+const RECIPE_PARSE_PROMPT_BASE = `You are a recipe parser. Extract the following from the text below and return valid JSON only (no markdown, no explanation):
 
 {
   "title": "Recipe Title",
@@ -17,6 +17,7 @@ const RECIPE_PARSE_PROMPT = `You are a recipe parser. Extract the following from
 
 Rules:
 - Make instructions beginner-friendly and clear
+- Use simple, everyday words that beginner cooks understand. Replace advanced or uncommon cooking terms with plain alternatives (e.g. "spoonful" or "small amount" instead of "dollop", "cut into thin strips" instead of "julienne", "briefly boil then cool in ice water" instead of "blanch", "mix gently" instead of "fold"). Only simplify terms that might be unfamiliar; keep common words as-is.
 - Include exact quantities where available
 - If quantities are missing, estimate reasonable amounts
 - Break complex steps into simpler sub-steps
@@ -25,7 +26,14 @@ Rules:
 Recipe text:
 `;
 
-const IMAGE_PARSE_PROMPT = `You are a recipe parser. Look at the recipe image(s) and extract all recipe information. Return valid JSON only (no markdown, no explanation):
+function buildRecipeParsePrompt(text: string, outputLanguage?: string): string {
+  const langRule = outputLanguage
+    ? `\nOutput the entire recipe (title, description, ingredients, and steps) in ${outputLanguage}. Use simple, everyday words for cooking terms in that language.\n\n`
+    : '';
+  return RECIPE_PARSE_PROMPT_BASE.replace('Recipe text:', langRule + 'Recipe text:') + text;
+}
+
+const IMAGE_PARSE_PROMPT_BASE = `You are a recipe parser. Look at the recipe image(s) and extract all recipe information. Return valid JSON only (no markdown, no explanation):
 
 {
   "title": "Recipe Title",
@@ -40,6 +48,7 @@ const IMAGE_PARSE_PROMPT = `You are a recipe parser. Look at the recipe image(s)
 
 Rules:
 - Make instructions beginner-friendly and clear
+- Use simple, everyday words that beginner cooks understand. Replace advanced cooking terms with plain alternatives (e.g. "spoonful" instead of "dollop", "cut into thin strips" instead of "julienne"). Only simplify unfamiliar terms.
 - Include exact quantities where available
 - If quantities are missing, estimate reasonable amounts
 - Break complex steps into simpler sub-steps
@@ -47,13 +56,20 @@ Rules:
 - Read all text visible in the image(s) carefully
 `;
 
+function buildImageParsePrompt(outputLanguage?: string): string {
+  const langRule = outputLanguage
+    ? `\nOutput the entire recipe (title, description, ingredients, and steps) in ${outputLanguage}. Use simple, everyday words for cooking terms in that language.\n\n`
+    : '';
+  return IMAGE_PARSE_PROMPT_BASE + langRule;
+}
+
 type ProviderName = 'Anthropic' | 'OpenAI' | 'Gemini';
 
 interface ProviderConfig {
   name: ProviderName;
   envKey: string;
   callText: (prompt: string, apiKey: string) => Promise<ParsedRecipeData>;
-  callVision: (images: ImageData[], apiKey: string) => Promise<ParsedRecipeData>;
+  callVision: (images: ImageData[], prompt: string, apiKey: string) => Promise<ParsedRecipeData>;
 }
 
 const PROVIDERS: ProviderConfig[] = [
@@ -77,8 +93,8 @@ function getApiKeyForProvider(envKey: string): string | null {
   }
 }
 
-export async function parseRecipeFromText(text: string): Promise<ParsedRecipeData> {
-  const prompt = RECIPE_PARSE_PROMPT + text;
+export async function parseRecipeFromText(text: string, outputLanguage?: string): Promise<ParsedRecipeData> {
+  const prompt = buildRecipeParsePrompt(text, outputLanguage);
 
   const keysStatus = {
     Anthropic: !!getApiKeyForProvider('ANTHROPIC_API_KEY'),
@@ -178,9 +194,10 @@ async function compressImageIfNeeded(uri: string): Promise<{ uri: string; mimeTy
   return { uri: lastResort.uri, mimeType: 'image/jpeg' };
 }
 
-export async function parseRecipeFromImages(imageUris: string[]): Promise<ParsedRecipeData> {
+export async function parseRecipeFromImages(imageUris: string[], outputLanguage?: string): Promise<ParsedRecipeData> {
   const maxImages = 5;
   const urisToProcess = imageUris.slice(0, maxImages);
+  const visionPrompt = buildImageParsePrompt(outputLanguage);
 
   const images: ImageData[] = [];
   for (const uri of urisToProcess) {
@@ -217,7 +234,7 @@ export async function parseRecipeFromImages(imageUris: string[]): Promise<Parsed
 
     try {
       console.log(`[RecipeParser] Trying image parsing with ${provider.name}...`);
-      const result = await provider.callVision(images, apiKey);
+      const result = await provider.callVision(images, visionPrompt, apiKey);
       console.log(`[RecipeParser] Success with ${provider.name}`);
       return result;
     } catch (error) {
@@ -265,7 +282,7 @@ async function callAnthropicText(prompt: string, apiKey: string): Promise<Parsed
   return extractAndValidateJson(content);
 }
 
-async function callAnthropicVision(images: ImageData[], apiKey: string): Promise<ParsedRecipeData> {
+async function callAnthropicVision(images: ImageData[], visionPrompt: string, apiKey: string): Promise<ParsedRecipeData> {
   const content: any[] = images.map(img => ({
     type: 'image',
     source: {
@@ -274,7 +291,7 @@ async function callAnthropicVision(images: ImageData[], apiKey: string): Promise
       data: img.base64,
     },
   }));
-  content.push({ type: 'text', text: IMAGE_PARSE_PROMPT });
+  content.push({ type: 'text', text: visionPrompt });
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -324,14 +341,14 @@ async function callOpenAIText(prompt: string, apiKey: string): Promise<ParsedRec
   return validateParsedRecipe(JSON.parse(content));
 }
 
-async function callOpenAIVision(images: ImageData[], apiKey: string): Promise<ParsedRecipeData> {
+async function callOpenAIVision(images: ImageData[], visionPrompt: string, apiKey: string): Promise<ParsedRecipeData> {
   const content: any[] = images.map(img => ({
     type: 'image_url',
     image_url: {
       url: `data:${img.mimeType};base64,${img.base64}`,
     },
   }));
-  content.push({ type: 'text', text: IMAGE_PARSE_PROMPT });
+  content.push({ type: 'text', text: visionPrompt });
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -382,14 +399,14 @@ async function callGeminiText(prompt: string, apiKey: string): Promise<ParsedRec
   return extractAndValidateJson(content);
 }
 
-async function callGeminiVision(images: ImageData[], apiKey: string): Promise<ParsedRecipeData> {
+async function callGeminiVision(images: ImageData[], visionPrompt: string, apiKey: string): Promise<ParsedRecipeData> {
   const parts: any[] = images.map(img => ({
     inline_data: {
       mime_type: img.mimeType,
       data: img.base64,
     },
   }));
-  parts.push({ text: IMAGE_PARSE_PROMPT });
+  parts.push({ text: visionPrompt });
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,

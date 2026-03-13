@@ -54,17 +54,25 @@ export function getBackendBaseUrl(): string {
   return getVideoBackendUrl();
 }
 
+export interface ParseRecipeOptions {
+  /** Output language for title, description, ingredients, and steps (e.g. "English", "Spanish"). */
+  outputLanguage?: string;
+}
+
 export async function parseRecipe(
   input: string | string[],
-  inputType: InputType
+  inputType: InputType,
+  options?: ParseRecipeOptions
 ): Promise<ParsedRecipeData> {
+  const outputLanguage = options?.outputLanguage;
+
   if (inputType === 'image') {
     const imageUris = Array.isArray(input) ? input : [input];
-    return parseRecipeFromImages(imageUris);
+    return parseRecipeFromImages(imageUris, outputLanguage);
   }
 
   if (inputType === 'video') {
-    return parseVideoViaBackend(input as string);
+    return parseVideoViaBackend(input as string, outputLanguage);
   }
 
   const normalized = await normalizeInputToText(input, inputType);
@@ -78,10 +86,10 @@ export async function parseRecipe(
     };
   }
 
-  return parseWithService(normalized.text);
+  return parseWithService(normalized.text, outputLanguage);
 }
 
-async function parseVideoViaBackend(url: string): Promise<ParsedRecipeData> {
+async function parseVideoViaBackend(url: string, outputLanguage?: string): Promise<ParsedRecipeData> {
   const backendUrl = getVideoBackendUrl();
   const endpoint = `${backendUrl}/parse-video`;
   console.log('Video backend URL:', endpoint);
@@ -93,12 +101,15 @@ async function parseVideoViaBackend(url: string): Promise<ParsedRecipeData> {
     );
   }
 
+  const body: { url: string; output_language?: string } = { url };
+  if (outputLanguage) body.output_language = outputLanguage;
+
   let response: Response;
   try {
     response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify(body),
     });
   } catch (e) {
     throwVideoError(
@@ -129,7 +140,7 @@ async function parseVideoViaBackend(url: string): Promise<ParsedRecipeData> {
     throwVideoError(msg, VIDEO_PARSE_ERROR_CODES.SERVER_ERROR);
   }
 
-  return data.recipe;
+  return data.recipe as ParsedRecipeData;
 }
 
 export { parseRecipeFromText } from '@/services/recipeParser';

@@ -22,6 +22,8 @@ import {
   ShoppingCart,
   RotateCcw,
   X,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useRecipes } from '@/context/RecipeContext';
@@ -45,6 +47,8 @@ export default function RecipeDetailScreen() {
   const [cookAgainIngredients, setCookAgainIngredients] = useState<Ingredient[]>([]);
   const [cookAgainDate, setCookAgainDate] = useState('');
   const [cookAgainReminder, setCookAgainReminder] = useState(false);
+  const [ingredientsCollapsed, setIngredientsCollapsed] = useState(true);
+  const [instructionsCollapsed, setInstructionsCollapsed] = useState(false);
 
   useEffect(() => {
     if (recipe) {
@@ -268,15 +272,31 @@ export default function RecipeDetailScreen() {
           )}
 
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
+            <TouchableOpacity
+              style={styles.sectionHeader}
+              onPress={() => !isEditing && setIngredientsCollapsed(prev => !prev)}
+              disabled={isEditing}
+              activeOpacity={isEditing ? 1 : 0.7}
+            >
               <Text style={styles.sectionTitle}>Ingredients</Text>
-              {isEditing && (
+              {isEditing ? (
                 <TouchableOpacity onPress={handleAddIngredient}>
                   <Text style={styles.addText}>+ Add</Text>
                 </TouchableOpacity>
+              ) : (
+                <>
+                  <Text style={styles.sectionCount}>
+                    {(isEditing ? ingredients : recipe.ingredients).length} items
+                  </Text>
+                  {ingredientsCollapsed ? (
+                    <ChevronDown size={20} color={Colors.textSecondary} />
+                  ) : (
+                    <ChevronUp size={20} color={Colors.textSecondary} />
+                  )}
+                </>
               )}
-            </View>
-            {(isEditing ? ingredients : recipe.ingredients).map((ingredient) => (
+            </TouchableOpacity>
+            {(!isEditing && ingredientsCollapsed) ? null : (isEditing ? ingredients : recipe.ingredients).map((ingredient) => (
               <View key={ingredient.id} style={styles.ingredientItem}>
                 {isEditing ? (
                   <>
@@ -322,8 +342,25 @@ export default function RecipeDetailScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Instructions</Text>
-            {recipe.steps.map((step, index) => (
+            <TouchableOpacity
+              style={styles.sectionHeader}
+              onPress={() => !isEditing && setInstructionsCollapsed(prev => !prev)}
+              disabled={isEditing}
+              activeOpacity={isEditing ? 1 : 0.7}
+            >
+              <Text style={styles.sectionTitle}>Instructions</Text>
+              {!isEditing && (
+                <>
+                  <Text style={styles.sectionCount}>{recipe.steps.length} steps</Text>
+                  {instructionsCollapsed ? (
+                    <ChevronDown size={20} color={Colors.textSecondary} />
+                  ) : (
+                    <ChevronUp size={20} color={Colors.textSecondary} />
+                  )}
+                </>
+              )}
+            </TouchableOpacity>
+            {(!isEditing && instructionsCollapsed) ? null : recipe.steps.map((step, index) => (
               <View key={step.id} style={styles.stepItem}>
                 <View style={styles.stepNumberCircle}>
                   <Text style={styles.stepNumber}>{index + 1}</Text>
@@ -603,6 +640,11 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: Colors.text,
     marginBottom: 16,
+  },
+  sectionCount: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginRight: 8,
   },
   addText: {
     fontSize: 14,

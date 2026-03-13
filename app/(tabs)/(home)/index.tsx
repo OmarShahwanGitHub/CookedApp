@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, ChefHat, Clock, BookOpen, Info } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useRecipes, useRecipesByStatus } from '@/context/RecipeContext';
@@ -10,11 +9,8 @@ import RecipeCard from '@/components/RecipeCard';
 import EmptyState from '@/components/EmptyState';
 import PaywallScreen from '@/components/PaywallScreen';
 
-const TAB_BAR_HEIGHT = 56;
-
 export default function HomeScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { recipes, isLoading } = useRecipes();
   const savedRecipes = useRecipesByStatus('saved');
   const [showPaywall, setShowPaywall] = useState(false);
@@ -53,7 +49,7 @@ export default function HomeScreen() {
   const showLimitInfo = () => {
     Alert.alert(
       'Free recipe limit',
-      'You can add up to 10 recipes on the free plan. This count is based on how many recipes you\'ve ever created—deleting or reinstalling the app won\'t reset it. Upgrade to Pro for unlimited recipes.',
+      'You can add up to 10 recipes on the free plan. This count is based on how many recipes you\'ve ever created. Upgrade to Pro for unlimited recipes!',
       [{ text: 'OK' }]
     );
   };
@@ -78,12 +74,10 @@ export default function HomeScreen() {
     );
   }
 
-  const badgeBottom = insets.bottom + TAB_BAR_HEIGHT + 10;
-
   return (
     <View style={styles.container}>
       {freePlanCount != null && (
-        <View style={[styles.countBadge, { bottom: badgeBottom }]}>
+        <View style={[styles.countBadge, styles.countBadgeAttached]}>
           <Text style={styles.countBadgeText}>
             {freePlanCount.current}/{freePlanCount.limit} recipes used
           </Text>
@@ -200,7 +194,6 @@ const styles = StyleSheet.create({
   },
   countBadge: {
     position: 'absolute',
-    left: 16,
     zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
@@ -211,6 +204,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     gap: 6,
+  },
+  countBadgeAttached: {
+    bottom: 6,
+    left: 4,
   },
   countBadgeText: {
     fontSize: 13,

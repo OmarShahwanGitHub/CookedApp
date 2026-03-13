@@ -1,6 +1,6 @@
 const https = require('https');
 
-const RECIPE_PARSE_PROMPT = `You are a recipe parser. Extract the following from the text below and return valid JSON only (no markdown, no explanation):
+const RECIPE_PARSE_PROMPT_BASE = `You are a recipe parser. Extract the following from the text below and return valid JSON only (no markdown, no explanation):
 
 {
   "title": "Recipe Title",
@@ -15,6 +15,7 @@ const RECIPE_PARSE_PROMPT = `You are a recipe parser. Extract the following from
 
 Rules:
 - Make instructions beginner-friendly and clear
+- Use simple, everyday words that beginner cooks understand. Replace advanced or uncommon cooking terms with plain alternatives (e.g. "spoonful" or "small amount" instead of "dollop", "cut into thin strips" instead of "julienne", "briefly boil then cool" instead of "blanch"). Only simplify terms that might be unfamiliar.
 - Include exact quantities where available
 - If quantities are missing, estimate reasonable amounts
 - Break complex steps into simpler sub-steps
@@ -23,6 +24,13 @@ Rules:
 
 Recipe transcript:
 `;
+
+function buildRecipeParsePrompt(transcript, outputLanguage) {
+  const langRule = outputLanguage
+    ? `\nOutput the entire recipe (title, description, ingredients, and steps) in ${outputLanguage}. Use simple, everyday words for cooking terms in that language.\n\n`
+    : '';
+  return RECIPE_PARSE_PROMPT_BASE.replace('Recipe transcript:', langRule + 'Recipe transcript:') + transcript;
+}
 
 const PROVIDERS = [
   {
@@ -49,8 +57,8 @@ function getKey(envKeys) {
   return null;
 }
 
-async function parseTranscriptToRecipe(transcript) {
-  const prompt = RECIPE_PARSE_PROMPT + transcript;
+async function parseTranscriptToRecipe(transcript, outputLanguage) {
+  const prompt = buildRecipeParsePrompt(transcript, outputLanguage);
 
   for (const provider of PROVIDERS) {
     const apiKey = getKey(provider.envKeys);
