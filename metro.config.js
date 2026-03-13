@@ -11,14 +11,14 @@ config.server = {
         req.on('data', (chunk) => { body += chunk; });
         req.on('end', async () => {
           try {
-            const { url } = JSON.parse(body);
+            const { url, output_language: outputLanguage } = JSON.parse(body || '{}');
             if (!url || typeof url !== 'string') {
               res.writeHead(400, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: 'A valid video URL is required.' }));
               return;
             }
             const { parseVideoToRecipe } = require('./server/parseVideo');
-            const result = await parseVideoToRecipe(url.trim());
+            const result = await parseVideoToRecipe(url.trim(), outputLanguage);
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(result));
           } catch (err) {

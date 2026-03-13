@@ -20,6 +20,7 @@ import Colors from '@/constants/colors';
 import { useRecipes } from '@/context/RecipeContext';
 import { RecipeSource, ParsedRecipeData, Ingredient, RecipeStep, RecipeCategory } from '@/types/recipe';
 import { parseRecipe, generateId, getVideoParseErrorCode } from '@/utils/parseRecipe';
+import { incrementLifetimeRecipeCount } from '@/services/subscriptionService';
 import { OUTPUT_LANGUAGES, DEFAULT_OUTPUT_LANGUAGE, type OutputLanguage } from '@/constants/outputLanguages';
 
 const AI_CONSENT_KEY = '@cooked/ai_parsing_consent';
@@ -143,6 +144,7 @@ export default function AddRecipeScreen() {
           id: generateId(),
         }))
       );
+      incrementLifetimeRecipeCount().catch(() => {});
     } catch (error) {
       console.error('Parse error:', error);
       const code = getVideoParseErrorCode(error);
