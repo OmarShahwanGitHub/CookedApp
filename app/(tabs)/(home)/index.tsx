@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Plus, ChefHat, Clock, BookOpen, Info } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useRecipes, useRecipesByStatus } from '@/context/RecipeContext';
@@ -16,15 +17,23 @@ export default function HomeScreen() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [freePlanCount, setFreePlanCount] = useState<{ current: number; limit: number } | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const refreshFreePlanCount = useCallback(() => {
     checkSubscriptionStatus().then((status) => {
-      if (!cancelled && !status.isSubscribed)
+      if (!status.isSubscribed)
         setFreePlanCount({ current: status.currentCount, limit: status.limit });
-      else if (!cancelled) setFreePlanCount(null);
+      else setFreePlanCount(null);
     });
-    return () => { cancelled = true; };
-  }, [recipes.length]);
+  }, []);
+
+  useEffect(() => {
+    refreshFreePlanCount();
+  }, [recipes.length, refreshFreePlanCount]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshFreePlanCount();
+    }, [refreshFreePlanCount])
+  );
   const recentRecipes = [...recipes].sort((a, b) => 
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   ).slice(0, 4);
