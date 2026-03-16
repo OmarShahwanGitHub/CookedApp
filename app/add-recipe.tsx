@@ -148,10 +148,10 @@ export default function AddRecipeScreen() {
     } catch (error) {
       console.error('Parse error:', error);
       const code = getVideoParseErrorCode(error);
-      const message = code
-        ? `Failed to parse recipe. Please try again. (${code})`
-        : 'Failed to parse recipe. Please try again.';
-      Alert.alert('Error', message);
+      const friendly =
+        'Feature temporarily down. Please try again in a bit, and contact support if the issue persists.';
+      const debugSuffix = code ? `\n\n(Code: ${code})` : '';
+      Alert.alert('Error', friendly + debugSuffix);
     } finally {
       setIsProcessing(false);
     }
@@ -323,7 +323,7 @@ export default function AddRecipeScreen() {
         <ChevronRight size={20} color={Colors.textLight} />
       </TouchableOpacity>
 
-      <Text style={styles.modeLanguageNote}>Accepts recipes in any language.</Text>
+      <Text style={styles.modeLanguageNote}>Accepts recipes in several languages.</Text>
     </View>
   );
 
