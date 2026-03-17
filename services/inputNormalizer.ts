@@ -7,6 +7,7 @@ export interface NormalizedInput {
     originalUrl?: string;
     imageCount?: number;
     isStub?: boolean;
+    ogImageUrl?: string;
   };
 }
 
@@ -51,10 +52,15 @@ async function normalizeUrl(url: string): Promise<NormalizedInput> {
     const html = await response.text();
     const text = stripHtmlToText(html);
 
+    const ogImageMatch =
+      html.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i) ||
+      html.match(/<meta[^>]+name=["']twitter:image["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+    const ogImageUrl = ogImageMatch?.[1];
+
     return {
       text,
       sourceType: 'url',
-      metadata: { originalUrl: url },
+      metadata: { originalUrl: url, ogImageUrl },
     };
   } catch (error) {
     console.warn('URL fetch failed, returning URL as context:', error);

@@ -25,11 +25,51 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import Colors from '@/constants/colors';
 import { useRecipes } from '@/context/RecipeContext';
 import { getCategoryByValue, RECIPE_CATEGORIES } from '@/constants/categories';
 import { Ingredient, RecipeCategory } from '@/types/recipe';
 import { generateId } from '@/utils/parseRecipe';
+
+function scaleQuantity(quantity: string, factor: number): string {
+  if (!quantity || !quantity.trim() || factor === 1) return quantity;
+  const q = quantity.trim();
+
+  const mixedMatch = q.match(/^(\d+)\s+(\d+)\/(\d+)(.*)$/);
+  if (mixedMatch) {
+    const whole = parseFloat(mixedMatch[1]);
+    const num = parseFloat(mixedMatch[2]);
+    const den = parseFloat(mixedMatch[3]) || 1;
+    const rest = mixedMatch[4] || '';
+    const value = (whole + num / den) * factor;
+    const formatted = parseFloat(value.toFixed(2)).toString();
+    return `${formatted}${rest}`;
+  }
+
+  const fracMatch = q.match(/^(\d+)\/(\d+)(.*)$/);
+  if (fracMatch) {
+    const num = parseFloat(fracMatch[1]);
+    const den = parseFloat(fracMatch[2]) || 1;
+    const rest = fracMatch[3] || '';
+    const value = (num / den) * factor;
+    const formatted = parseFloat(value.toFixed(2)).toString();
+    return `${formatted}${rest}`;
+  }
+
+  const numMatch = q.match(/^(\d+(\.\d+)?)(.*)$/);
+  if (numMatch) {
+    const base = parseFloat(numMatch[1]);
+    if (!isNaN(base)) {
+      const rest = numMatch[3] || '';
+      const value = base * factor;
+      const formatted = parseFloat(value.toFixed(2)).toString();
+      return `${formatted}${rest}`;
+    }
+  }
+
+  return quantity;
+}
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -49,6 +89,9 @@ export default function RecipeDetailScreen() {
   const [cookAgainReminder, setCookAgainReminder] = useState(false);
   const [ingredientsCollapsed, setIngredientsCollapsed] = useState(true);
   const [instructionsCollapsed, setInstructionsCollapsed] = useState(false);
+  const [servingsScale, setServingsScale] = useState(1);
+  const [servingsText, setServingsText] = useState('1');
+  const [imageUri, setImageUri] = useState<string | undefined>(recipe?.imageUri);
 
   useEffect(() => {
     if (recipe) {
@@ -57,6 +100,9 @@ export default function RecipeDetailScreen() {
       setCategory(recipe.category);
       setCookDate(recipe.cookDate || '');
       setReminderEnabled(recipe.reminderEnabled);
+      setImageUri(recipe.imageUri);
+      setServingsScale(1);
+      setServingsText('1');
     }
   }, [recipe]);
 
@@ -103,6 +149,7 @@ export default function RecipeDetailScreen() {
       category,
       cookDate: cookDate || undefined,
       reminderEnabled,
+      imageUri,
     });
     setIsEditing(false);
   };
@@ -193,13 +240,51 @@ export default function RecipeDetailScreen() {
       />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {recipe.imageUri ? (
-          <Image source={{ uri: recipe.imageUri }} style={styles.heroImage} />
-        ) : (
-          <View style={[styles.heroPlaceholder, { backgroundColor: Colors.surfaceAlt }]}>
-            <Text style={styles.heroEmoji}>{categoryInfo.emoji}</Text>
-          </View>
-        )}
+        <View>
+          <TouchableOpacity
+            activeOpacity={isEditing ? 0.8 : 1}
+            onPress={async () => {
+              if (!isEditing) return;
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsMultipleSelection: false,
+                quality: 0.8,
+              });
+              if (!result.canceled && result.assets.length > 0) {
+                setImageUri(result.assets[0].uri);
+              }
+            }}
+          >
+            {imageUri ? (
+              <Image source={{ uri: imageUri }} style={styles.heroImage} />
+            ) : (
+              <View style={[styles.heroPlaceholder, { backgroundColor: Colors.surfaceAlt }]}>
+                <Text style={styles.heroEmoji}>{categoryInfo.emoji}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          {isEditing && (
+            <View style={styles.imageEditBar}>
+              <TouchableOpacity
+                style={styles.imageEditButton}
+                onPress={async () => {
+                  const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ['images'],
+                    allowsMultipleSelection: false,
+                    quality: 0.8,
+                  });
+                  if (!result.canceled && result.assets.length > 0) {
+                    setImageUri(result.assets[0].uri);
+                  }
+                }}
+              >
+                <Text style={styles.imageEditButtonText}>
+                  {imageUri ? 'Change photo' : 'Add photo'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
         <View style={styles.content}>
           <View style={styles.statusRow}>
@@ -271,6 +356,53 @@ export default function RecipeDetailScreen() {
             </View>
           )}
 
+          {isEditing && (
+            <View style={styles.editExtras}>
+              <View style={styles.servingsRow}>
+                <Text style={styles.servingsLabel}>Batch size</Text>
+                <View style={styles.servingsControls}>
+                  <TouchableOpacity
+                    style={styles.servingsButton}
+                    onPress={() => {
+                      const next = Math.max(0.25, parseFloat((servingsScale - 0.5).toFixed(2)));
+                      setServingsScale(next);
+                      setServingsText(next.toString());
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.servingsButtonText}>−</Text>
+                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.servingsInput}
+                    keyboardType="decimal-pad"
+                    value={servingsText}
+                    onChangeText={(value) => {
+                      setServingsText(value);
+                      const trimmed = value.trim();
+                      if (!trimmed) return;
+                      const n = parseFloat(trimmed.replace(',', '.'));
+                      if (!isNaN(n) && n > 0) {
+                        setServingsScale(n);
+                      }
+                    }}
+                  />
+                  <Text style={styles.servingsMultiplierLabel}>x</Text>
+                  <TouchableOpacity
+                    style={styles.servingsButton}
+                    onPress={() => {
+                      const next = parseFloat((servingsScale + 0.5).toFixed(2));
+                      setServingsScale(next);
+                      setServingsText(next.toString());
+                    }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.servingsButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
+
           <View style={styles.section}>
             <TouchableOpacity
               style={styles.sectionHeader}
@@ -332,7 +464,9 @@ export default function RecipeDetailScreen() {
                   <>
                     <View style={styles.bulletPoint} />
                     <Text style={styles.ingredientText}>
-                      {ingredient.quantity ? `${ingredient.quantity} ` : ''}
+                      {ingredient.quantity
+                        ? `${scaleQuantity(ingredient.quantity, servingsScale)} `
+                        : ''}
                       {ingredient.name}
                     </Text>
                   </>
@@ -586,6 +720,74 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
     gap: 16,
+  },
+  editExtras: {
+    marginBottom: 24,
+    gap: 12,
+  },
+  servingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  servingsLabel: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  servingsControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  servingsButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.surface,
+  },
+  servingsButtonText: {
+    fontSize: 18,
+    color: Colors.text,
+    fontWeight: '600' as const,
+  },
+  servingsInput: {
+    minWidth: 60,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    fontSize: 14,
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  servingsMultiplierLabel: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  imageEditBar: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+  imageEditButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  imageEditButtonText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '500' as const,
   },
   category: {
     fontSize: 14,

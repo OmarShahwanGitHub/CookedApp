@@ -270,6 +270,10 @@ async function parseVideoToRecipe(url, outputLanguage) {
       const transcriptText = await fetchYouTubeTranscript(normalizedUrl);
       console.log('YouTube transcript received, parsing recipe with AI...');
       const recipe = await parseTranscriptToRecipe(transcriptText, outputLanguage);
+      const idMatch = normalizedUrl.match(/v=([a-zA-Z0-9_-]{11})/);
+      if (idMatch && !recipe.imageUrl) {
+        recipe.imageUrl = `https://img.youtube.com/vi/${idMatch[1]}/hqdefault.jpg`;
+      }
       return { recipe, source: 'transcriptapi' };
     } catch (err) {
       if (err.statusCode === 422) throw err;

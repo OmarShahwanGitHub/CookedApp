@@ -251,7 +251,7 @@ export default function AddRecipeScreen() {
       status: 'saved',
       source,
       sourceUrl: mode === 'link' ? linkInput : mode === 'video' ? videoInput : undefined,
-      imageUri: selectedImages[0],
+      imageUri: selectedImages[0] || parsedData?.imageUrl,
       cookDate: cookDate || undefined,
       reminderEnabled,
     });

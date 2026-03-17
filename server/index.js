@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const { parseVideoToRecipe } = require('./parseVideo');
+const { supabase } = require('./supabaseClient');
 
 const app = express();
 const PORT = process.env.PORT || process.env.VIDEO_BACKEND_PORT || 3001;
@@ -47,6 +48,103 @@ app.post('/parse-video', async (req, res) => {
     const message = err.message || 'Failed to process video.';
     const status = err.statusCode || 500;
     return res.status(status).json({ error: message });
+  }
+});
+
+// One-time promo codes (Supabase-backed)
+app.post('/promo/redeem', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: 'Promo service unavailable.' });
+    }
+
+    const { code, user_id: userId } = req.body || {};
+    if (!code || !userId) {
+      return res.status(400).json({ error: 'code and user_id are required.' });
+    }
+
+    const { data: row, error: fetchError } = await supabase
+      .from('promo_codes')
+      .select('*')
+      .eq('code', code)
+      .limit(1)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('[Promo] Supabase fetch error:', fetchError);
+      return res.status(500).json({ error: 'Promo lookup failed.' });
+    }
+
+    if (!row) {
+      return res.status(404).json({ error: 'Invalid code.' });
+    }
+
+    if (row.redeemed_at) {
+      return res.status(410).json({ error: 'Code already used.' });
+    }
+
+    const now = new Date();
+    const days = row.days || 3;
+    const expires = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+    const { error: updateError } = await supabase
+      .from('promo_codes')
+      .update({
+        redeemed_at: now.toISOString(),
+        user_id: userId,
+        entitlement_expires_at: expires.toISOString(),
+      })
+      .eq('id', row.id);
+
+    if (updateError) {
+      console.error('[Promo] Supabase update error:', updateError);
+      return res.status(500).json({ error: 'Could not redeem code.' });
+    }
+
+    return res.json({ success: true, entitlement_expires_at: expires.toISOString() });
+  } catch (err) {
+    console.error('[Promo] Redeem error:', err);
+    return res.status(500).json({ error: 'Failed to redeem promo code.' });
+  }
+});
+
+app.get('/promo/entitlement', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.json({ active: false });
+    }
+
+    const userId = req.query.user_id;
+    if (!userId || typeof userId !== 'string') {
+      return res.status(400).json({ error: 'user_id is required.' });
+    }
+
+    const { data: row, error } = await supabase
+      .from('promo_codes')
+      .select('entitlement_expires_at')
+      .eq('user_id', userId)
+      .not('entitlement_expires_at', 'is', null)
+      .order('entitlement_expires_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[Promo] Entitlement fetch error:', error);
+      return res.json({ active: false });
+    }
+
+    if (!row || !row.entitlement_expires_at) {
+      return res.json({ active: false });
+    }
+
+    const now = new Date();
+    const expires = new Date(row.entitlement_expires_at);
+    const active = expires > now;
+
+    return res.json({ active, entitlement_expires_at: row.entitlement_expires_at });
+  } catch (err) {
+    console.error('[Promo] Entitlement error:', err);
+    return res.json({ active: false });
   }
 });
 

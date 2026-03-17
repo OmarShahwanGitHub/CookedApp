@@ -457,6 +457,12 @@ function validateParsedRecipe(data: any): ParsedRecipeData {
           instruction: typeof s.instruction === 'string' ? s.instruction : '',
         }))
       : [],
+    imageUrl:
+      typeof data.imageUrl === 'string'
+        ? data.imageUrl
+        : typeof data.image_url === 'string'
+        ? data.image_url
+        : undefined,
   };
 }
 

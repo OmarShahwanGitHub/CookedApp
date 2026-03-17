@@ -86,7 +86,13 @@ export async function parseRecipe(
     };
   }
 
-  return parseWithService(normalized.text, outputLanguage);
+  const parsed = await parseWithService(normalized.text, outputLanguage);
+
+  if (normalized.metadata?.ogImageUrl && !parsed.imageUrl) {
+    parsed.imageUrl = normalized.metadata.ogImageUrl;
+  }
+
+  return parsed;
 }
 
 async function parseVideoViaBackend(url: string, outputLanguage?: string): Promise<ParsedRecipeData> {

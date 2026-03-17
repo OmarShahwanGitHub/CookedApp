@@ -103,6 +103,20 @@ function getBackendBaseUrl(): string | null {
   return null;
 }
 
+async function hasActivePromo(): Promise<boolean> {
+  const base = getBackendBaseUrl();
+  if (!base) return false;
+  try {
+    const userId = await getStableUserId();
+    const res = await fetch(`${base}/promo/entitlement?user_id=${encodeURIComponent(userId)}`);
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => ({}));
+    return !!data?.active;
+  } catch {
+    return false;
+  }
+}
+
 /** Lifetime number of recipes ever created (never decreases on delete). Used to enforce free limit and survive reinstall when synced to backend. */
 export async function getLifetimeRecipeCount(): Promise<number> {
   let local = 0;
@@ -170,6 +184,16 @@ export async function checkSubscriptionStatus(): Promise<{
     } catch (error) {
       console.warn('Failed to check subscription:', error);
     }
+  }
+
+  const promoActive = await hasActivePromo();
+  if (promoActive) {
+    return {
+      isSubscribed: true,
+      canAddRecipe: true,
+      currentCount: 0,
+      limit: Infinity,
+    };
   }
 
   const currentCount = await getLifetimeRecipeCount();

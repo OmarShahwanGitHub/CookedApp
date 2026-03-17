@@ -50,4 +50,6 @@ export interface ParsedRecipeData {
   description?: string;
   ingredients: Omit<Ingredient, 'id' | 'checked' | 'alreadyHave'>[];
   steps: Omit<RecipeStep, 'id'>[];
+  /** Optional default image URL (e.g. og:image or video thumbnail). */
+  imageUrl?: string;
 }
