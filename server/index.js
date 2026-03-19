@@ -11,6 +11,24 @@ function makeRequestId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function maskSecret(secret) {
+  if (!secret || typeof secret !== 'string') return 'missing';
+  if (secret.length < 10) return `${secret.slice(0, 2)}***`;
+  return `${secret.slice(0, 6)}...${secret.slice(-4)}`;
+}
+
+function getJwtRole(token) {
+  try {
+    if (!token || typeof token !== 'string') return null;
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    return payload?.role || null;
+  } catch {
+    return null;
+  }
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -69,6 +87,12 @@ function entitlementExpiresEndOfLastDay(redeemDate, numDays) {
 app.post('/promo/redeem', async (req, res) => {
   const requestId = makeRequestId();
   try {
+    console.info('[Promo] Redeem request received', {
+      requestId,
+      hasBody: !!req.body,
+      bodyKeys: req.body ? Object.keys(req.body) : [],
+    });
+
     if (!supabase) {
       console.error('[Promo] Redeem unavailable: supabase client missing', { requestId });
       return res.status(503).json({ error: 'Promo service unavailable.', request_id: requestId });
@@ -161,8 +185,15 @@ app.post('/promo/redeem', async (req, res) => {
 });
 
 app.get('/promo/entitlement', async (req, res) => {
+  const requestId = makeRequestId();
   try {
+    console.info('[Promo] Entitlement request received', {
+      requestId,
+      queryKeys: req.query ? Object.keys(req.query) : [],
+    });
+
     if (!supabase) {
+      console.warn('[Promo] Entitlement supabase missing', { requestId });
       return res.json({ active: false });
     }
 
@@ -170,6 +201,7 @@ app.get('/promo/entitlement', async (req, res) => {
     if (!userId || typeof userId !== 'string') {
       return res.status(400).json({ error: 'user_id is required.' });
     }
+    console.info('[Promo] Entitlement lookup', { requestId, userId });
 
     const { data: row, error } = await supabase
       .from('promo_codes')
@@ -181,7 +213,7 @@ app.get('/promo/entitlement', async (req, res) => {
       .maybeSingle();
 
     if (error) {
-      console.error('[Promo] Entitlement fetch error:', error);
+      console.error('[Promo] Entitlement fetch error:', { requestId, error });
       return res.json({ active: false });
     }
 
@@ -192,10 +224,16 @@ app.get('/promo/entitlement', async (req, res) => {
     const now = new Date();
     const expires = new Date(row.entitlement_expires_at);
     const active = now.getTime() <= expires.getTime();
+    console.info('[Promo] Entitlement result', {
+      requestId,
+      userId,
+      entitlement_expires_at: row.entitlement_expires_at,
+      active,
+    });
 
     return res.json({ active, entitlement_expires_at: row.entitlement_expires_at });
   } catch (err) {
-    console.error('[Promo] Entitlement error:', err);
+    console.error('[Promo] Entitlement error:', { requestId, err });
     return res.json({ active: false });
   }
 });
@@ -216,4 +254,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Video parser backend running on port ${PORT}`);
+  console.log('[Promo] Server env check', {
+    hasSupabaseClient: !!supabase,
+    hasSupabaseUrl: !!process.env.SUPABASE_URL,
+    supabaseUrlHost: process.env.SUPABASE_URL ? String(process.env.SUPABASE_URL).replace(/^https?:\/\//, '') : null,
+    serviceRolePreview: maskSecret(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    serviceRoleClaim: getJwtRole(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    nodeEnv: process.env.NODE_ENV || null,
+  });
 });
