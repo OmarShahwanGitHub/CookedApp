@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Linking } from 'react-native';
-import { Lock, Crown, Check, X } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { Crown, Check, X } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { getBackendBaseUrl } from '@/utils/parseRecipe';
 import {
@@ -27,6 +28,7 @@ interface PaywallScreenProps {
 }
 
 export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreenProps) {
+  const router = useRouter();
   const [offerings, setOfferings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -162,6 +164,16 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
           )}
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={styles.promoLink}
+          onPress={() => {
+            onDismiss();
+            router.push('/redeem-code');
+          }}
+        >
+          <Text style={styles.promoLinkText}>Have a promo code?</Text>
+        </TouchableOpacity>
+
         <View style={styles.legalLinks}>
           <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL())}>
             <Text style={styles.legalLinkText}>Privacy Policy</Text>
@@ -294,6 +306,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.primary,
     fontWeight: '500' as const,
+  },
+  promoLink: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  promoLinkText: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+    fontWeight: '500' as const,
+    textDecorationLine: 'underline',
   },
   legalLinks: {
     flexDirection: 'row',

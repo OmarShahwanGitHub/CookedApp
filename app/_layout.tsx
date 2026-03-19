@@ -38,6 +38,12 @@ function RootLayoutNav() {
           title: 'Recipe',
         }}
       />
+      <Stack.Screen
+        name="redeem-code"
+        options={{
+          title: 'Redeem promo code',
+        }}
+      />
     </Stack>
   );
 }

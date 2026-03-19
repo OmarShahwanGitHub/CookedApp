@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import { getStableUserId } from '@/services/subscriptionService';
 import Constants from 'expo-constants';
@@ -18,7 +19,23 @@ function getBackendBaseUrl(): string | null {
   return null;
 }
 
+function formatAccessThrough(iso: string): string {
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+}
+
 export default function RedeemCodeScreen() {
+  const router = useRouter();
   const [code, setCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,9 +59,15 @@ export default function RedeemCodeScreen() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.success) {
+        const through = data.entitlement_expires_at
+          ? formatAccessThrough(data.entitlement_expires_at)
+          : '';
         Alert.alert(
           'Success',
-          'Promo applied! You now have unlimited access for a limited time.'
+          through
+            ? `Promo applied! Unlimited access through the end of ${through} (end of that calendar day).`
+            : 'Promo applied! You now have unlimited access for a limited time.',
+          [{ text: 'OK', onPress: () => router.back() }]
         );
       } else {
         Alert.alert('Error', data.error || 'Could not redeem code.');
@@ -61,7 +84,8 @@ export default function RedeemCodeScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Redeem promo code</Text>
       <Text style={styles.subtitle}>
-        Enter a one-time promo code to unlock temporary unlimited access.
+        One-time codes unlock unlimited recipes for the number of days on your code. You keep access through the end
+        of the last day (e.g. a 3-day code = full access on day 1, 2, and 3).
       </Text>
       <TextInput
         style={styles.input}

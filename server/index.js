@@ -51,6 +51,16 @@ app.post('/parse-video', async (req, res) => {
   }
 });
 
+/** Last instant of access: end of UTC calendar day on the Nth day (day 1 = redeem day). */
+function entitlementExpiresEndOfLastDay(redeemDate, numDays) {
+  const n = Math.max(1, Math.floor(Number(numDays)) || 3);
+  const d = new Date(redeemDate);
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth();
+  const day = d.getUTCDate();
+  return new Date(Date.UTC(y, m, day + (n - 1), 23, 59, 59, 999));
+}
+
 // One-time promo codes (Supabase-backed)
 app.post('/promo/redeem', async (req, res) => {
   try {
@@ -85,7 +95,7 @@ app.post('/promo/redeem', async (req, res) => {
 
     const now = new Date();
     const days = row.days || 3;
-    const expires = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+    const expires = entitlementExpiresEndOfLastDay(now, days);
 
     const { error: updateError } = await supabase
       .from('promo_codes')
@@ -139,7 +149,7 @@ app.get('/promo/entitlement', async (req, res) => {
 
     const now = new Date();
     const expires = new Date(row.entitlement_expires_at);
-    const active = expires > now;
+    const active = now.getTime() <= expires.getTime();
 
     return res.json({ active, entitlement_expires_at: row.entitlement_expires_at });
   } catch (err) {

@@ -97,6 +97,9 @@ export default function HomeScreen() {
           >
             <Info size={14} color={Colors.textSecondary} />
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/redeem-code')} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+            <Text style={styles.redeemLink}>Promo</Text>
+          </TouchableOpacity>
         </View>
       )}
       <ScrollView
@@ -212,7 +215,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceAlt,
     borderWidth: 1,
     borderColor: Colors.border,
-    gap: 6,
+    gap: 8,
+  },
+  redeemLink: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.primary,
   },
   countBadgeAttached: {
     bottom: 6,
