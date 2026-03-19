@@ -7,6 +7,10 @@ const { supabase } = require('./supabaseClient');
 const app = express();
 const PORT = process.env.PORT || process.env.VIDEO_BACKEND_PORT || 3001;
 
+function makeRequestId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -63,34 +67,50 @@ function entitlementExpiresEndOfLastDay(redeemDate, numDays) {
 
 // One-time promo codes (Supabase-backed)
 app.post('/promo/redeem', async (req, res) => {
+  const requestId = makeRequestId();
   try {
     if (!supabase) {
-      return res.status(503).json({ error: 'Promo service unavailable.' });
+      console.error('[Promo] Redeem unavailable: supabase client missing', { requestId });
+      return res.status(503).json({ error: 'Promo service unavailable.', request_id: requestId });
     }
 
     const { code, user_id: userId } = req.body || {};
     if (!code || !userId) {
-      return res.status(400).json({ error: 'code and user_id are required.' });
+      return res.status(400).json({ error: 'code and user_id are required.', request_id: requestId });
     }
+    const rawCode = String(code).trim();
+    const normalizedCode = rawCode.toUpperCase();
+    const codeCandidates = rawCode === normalizedCode ? [rawCode] : [rawCode, normalizedCode];
+    console.info('[Promo] Redeem attempt', {
+      requestId,
+      userId,
+      codeCandidates,
+    });
 
     const { data: row, error: fetchError } = await supabase
       .from('promo_codes')
       .select('*')
-      .eq('code', code)
+      .in('code', codeCandidates)
       .limit(1)
       .maybeSingle();
 
     if (fetchError) {
-      console.error('[Promo] Supabase fetch error:', fetchError);
-      return res.status(500).json({ error: 'Promo lookup failed.' });
+      console.error('[Promo] Supabase fetch error:', { requestId, fetchError });
+      return res.status(500).json({
+        error: 'Promo lookup failed.',
+        details: fetchError.message,
+        code: fetchError.code,
+        hint: fetchError.hint,
+        request_id: requestId,
+      });
     }
 
     if (!row) {
-      return res.status(404).json({ error: 'Invalid code.' });
+      return res.status(404).json({ error: 'Invalid code.', request_id: requestId });
     }
 
     if (row.redeemed_at) {
-      return res.status(410).json({ error: 'Code already used.' });
+      return res.status(410).json({ error: 'Code already used.', request_id: requestId });
     }
 
     const now = new Date();
@@ -107,14 +127,36 @@ app.post('/promo/redeem', async (req, res) => {
       .eq('id', row.id);
 
     if (updateError) {
-      console.error('[Promo] Supabase update error:', updateError);
-      return res.status(500).json({ error: 'Could not redeem code.' });
+      console.error('[Promo] Supabase update error:', {
+        requestId,
+        rowId: row.id,
+        code: row.code,
+        updateError,
+      });
+      return res.status(500).json({
+        error: 'Could not redeem code.',
+        details: updateError.message,
+        code: updateError.code,
+        hint: updateError.hint,
+        request_id: requestId,
+      });
     }
 
+    console.info('[Promo] Redeem success', {
+      requestId,
+      rowId: row.id,
+      userId,
+      code: row.code,
+      entitlement_expires_at: expires.toISOString(),
+    });
     return res.json({ success: true, entitlement_expires_at: expires.toISOString() });
   } catch (err) {
-    console.error('[Promo] Redeem error:', err);
-    return res.status(500).json({ error: 'Failed to redeem promo code.' });
+    console.error('[Promo] Redeem error:', { requestId, err });
+    return res.status(500).json({
+      error: 'Failed to redeem promo code.',
+      details: err?.message,
+      request_id: requestId,
+    });
   }
 });
 
