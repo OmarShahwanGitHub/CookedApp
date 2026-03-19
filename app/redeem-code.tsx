@@ -20,14 +20,6 @@ import Constants from 'expo-constants';
 function getBackendBaseUrl(): string | null {
   const env = process.env.EXPO_PUBLIC_VIDEO_BACKEND_URL;
   if (env && typeof env === 'string' && env.trim()) return env.trim().replace(/\/$/, '');
-  const hostUri =
-    Constants.expoConfig?.hostUri ??
-    (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ??
-    (Constants as any).manifest?.debuggerHost;
-  if (hostUri) {
-    const protocol = String(hostUri).includes('exp.direct') ? 'https' : 'http';
-    return `${protocol}://${hostUri}`;
-  }
   return null;
 }
 
@@ -58,18 +50,36 @@ export default function RedeemCodeScreen() {
     }
     const base = getBackendBaseUrl();
     if (!base) {
-      Alert.alert('Error', 'Backend not configured.');
+      Alert.alert(
+        'Backend not configured',
+        'Set EXPO_PUBLIC_VIDEO_BACKEND_URL in .env to your Render backend URL, then restart Expo.'
+      );
       return;
     }
     setIsSubmitting(true);
     try {
       const userId = await getStableUserId();
-      const res = await fetch(`${base}/promo/redeem`, {
+      const endpoint = `${base}/promo/redeem`;
+      const payload = { code: code.trim().toUpperCase(), user_id: userId };
+      console.log('[Promo][Client] redeem request', { endpoint, payload });
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code.trim().toUpperCase(), user_id: userId }),
+        body: JSON.stringify(payload),
       });
-      const data = await res.json().catch(() => ({}));
+      const raw = await res.text();
+      let data: any = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { raw };
+      }
+      console.log('[Promo][Client] redeem response', {
+        endpoint,
+        status: res.status,
+        ok: res.ok,
+        body: data,
+      });
       if (res.ok && data.success) {
         const through = data.entitlement_expires_at
           ? formatAccessThrough(data.entitlement_expires_at)
@@ -84,7 +94,9 @@ export default function RedeemCodeScreen() {
       } else {
         const requestId = data?.request_id ? `\nRequest ID: ${data.request_id}` : '';
         const details = data?.details ? `\nDetails: ${data.details}` : '';
-        Alert.alert('Error', `${data.error || 'Could not redeem code.'}${details}${requestId}`);
+        const status = `\nStatus: ${res.status}`;
+        const fallbackRaw = data?.raw ? `\nRaw: ${String(data.raw).slice(0, 180)}` : '';
+        Alert.alert('Error', `${data.error || 'Could not redeem code.'}${status}${details}${requestId}${fallbackRaw}`);
       }
     } catch (err) {
       console.error('Redeem code error:', err);
@@ -105,6 +117,7 @@ export default function RedeemCodeScreen() {
           style={styles.scroll}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           <Text style={styles.title}>Redeem promo code</Text>
           <Text style={styles.subtitle}>
