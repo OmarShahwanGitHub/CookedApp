@@ -92,11 +92,7 @@ export default function RedeemCodeScreen() {
           [{ text: 'OK', onPress: () => router.back() }]
         );
       } else {
-        const requestId = data?.request_id ? `\nRequest ID: ${data.request_id}` : '';
-        const details = data?.details ? `\nDetails: ${data.details}` : '';
-        const status = `\nStatus: ${res.status}`;
-        const fallbackRaw = data?.raw ? `\nRaw: ${String(data.raw).slice(0, 180)}` : '';
-        Alert.alert('Error', `${data.error || 'Could not redeem code.'}${status}${details}${requestId}${fallbackRaw}`);
+        Alert.alert('Error', data?.error || 'Could not redeem code.');
       }
     } catch (err) {
       console.error('Redeem code error:', err);
