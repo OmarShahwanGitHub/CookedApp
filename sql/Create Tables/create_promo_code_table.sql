@@ -37,3 +37,7 @@ create policy promo_codes_service_role_update
   to service_role
   using (true)
   with check (true);
+
+-- Table privileges for PostgREST when using SUPABASE_SERVICE_ROLE_KEY from your backend.
+grant usage on schema public to service_role;
+grant select, insert, update on table public.promo_codes to service_role;

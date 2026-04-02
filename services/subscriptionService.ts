@@ -117,6 +117,20 @@ async function hasActivePromo(): Promise<boolean> {
   }
 }
 
+/** True when the backend reports at least one unredeemed promo code (hide Promo entry when false). */
+export async function getPromoCodesAvailable(): Promise<boolean> {
+  const base = getBackendBaseUrl();
+  if (!base) return false;
+  try {
+    const res = await fetch(`${base}/promo/availability`);
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => ({}));
+    return !!data?.available;
+  } catch {
+    return false;
+  }
+}
+
 /** Lifetime number of recipes ever created (never decreases on delete). Used to enforce free limit and survive reinstall when synced to backend. */
 export async function getLifetimeRecipeCount(): Promise<number> {
   let local = 0;

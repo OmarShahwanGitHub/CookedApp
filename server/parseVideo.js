@@ -96,6 +96,142 @@ function validateUrl(url) {
   }
 }
 
+function decodeHtmlUrlAttr(raw) {
+  return String(raw || '')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .trim();
+}
+
+function resolveUrlAgainstPage(pageUrl, href) {
+  const h = decodeHtmlUrlAttr(href);
+  if (!h) return null;
+  if (/^https?:\/\//i.test(h)) return h;
+  if (h.startsWith('//')) return `https:${h}`;
+  try {
+    return new URL(h, pageUrl).href;
+  } catch {
+    return null;
+  }
+}
+
+function extractCandidateImageUrls(html) {
+  const seen = new Set();
+  const push = (s) => {
+    const t = decodeHtmlUrlAttr(s);
+    if (t) seen.add(t);
+  };
+
+  const metaPatterns = [
+    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/gi,
+    /<meta[^>]+property=["']og:image:secure_url["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image:secure_url["']/gi,
+    /<meta[^>]+property=["']og:image:url["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image:url["']/gi,
+    /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/gi,
+    /<meta[^>]+name=["']twitter:image:src["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image:src["']/gi,
+    /<meta[^>]+itemprop=["']image["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+itemprop=["']image["']/gi,
+  ];
+
+  for (const re of metaPatterns) {
+    let m;
+    const r = new RegExp(re.source, re.flags);
+    while ((m = r.exec(html)) !== null) {
+      if (m[1]) push(m[1]);
+    }
+  }
+
+  const linkPatterns = [
+    /<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/gi,
+    /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']image_src["']/gi,
+  ];
+  for (const re of linkPatterns) {
+    let m;
+    const r = new RegExp(re.source, re.flags);
+    while ((m = r.exec(html)) !== null) {
+      if (m[1]) push(m[1]);
+    }
+  }
+
+  const ldImage =
+    html.match(/"image"\s*:\s*"([^"]+)"/i) ||
+    html.match(/"image"\s*:\s*\[\s*"([^"]+)"/i) ||
+    html.match(/"@type"\s*:\s*"Recipe"[\s\S]{0,800}?"image"\s*:\s*"([^"]+)"/i);
+  if (ldImage && ldImage[1]) push(ldImage[1]);
+
+  return Array.from(seen);
+}
+
+function pickPreviewImageFromHtml(html, pageUrl, responseUrl) {
+  const base = responseUrl || pageUrl;
+  for (const raw of extractCandidateImageUrls(html)) {
+    const abs = resolveUrlAgainstPage(base, raw);
+    if (abs && /^https?:\/\//i.test(abs)) return abs;
+  }
+  return null;
+}
+
+/** Best-effort og/twitter preview for watch pages (Vimeo, news sites, etc.). */
+async function tryFetchOgImageFromUrl(pageUrl) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    validateUrl(pageUrl);
+    const res = await fetch(pageUrl, {
+      method: 'GET',
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CookedApp/1.0)',
+        Accept: 'text/html,application/xhtml+xml',
+      },
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return null;
+    const html = (await res.text()).slice(0, 600000);
+    const finalUrl = res.url || pageUrl;
+    return pickPreviewImageFromHtml(html, pageUrl, finalUrl);
+  } catch (e) {
+    console.warn('[Video] Og/thumbnail fetch failed:', pageUrl.replace(/[#?].*/, ''), e.message);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function pickSocialThumbnail(obj) {
+  if (!obj || typeof obj !== 'object') return null;
+  const keys = [
+    'thumbnailUrl',
+    'thumbnail',
+    'videoThumbnail',
+    'coverUrl',
+    'cover',
+    'previewImage',
+    'previewImageUrl',
+    'image',
+    'ogImage',
+    'picture',
+    'poster',
+    'thumbUrl',
+  ];
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === 'string' && /^https?:\/\//i.test(v.trim())) return v.trim();
+  }
+  if (obj.video && typeof obj.video === 'object') {
+    const nested = pickSocialThumbnail(obj.video);
+    if (nested) return nested;
+  }
+  return null;
+}
+
 async function assemblyaiFetch(path, options = {}) {
   const apiKey = getAssemblyAIKey();
   const url = path.startsWith('http') ? path : `${ASSEMBLYAI_BASE}${path}`;
@@ -245,7 +381,9 @@ async function fetchSocialVideoTranscript(videoUrl) {
   const data = await res.json().catch(() => ({}));
   const status = data.status;
   const payload = data.data || data;
-  const segments = payload.transcript;
+  const metaRoot = Array.isArray(payload) ? payload[0] : payload;
+  const thumbnailUrl = pickSocialThumbnail(metaRoot);
+  const segments = Array.isArray(payload) ? metaRoot?.transcript : payload.transcript;
   if (status !== 'success' || !Array.isArray(segments) || segments.length === 0) {
     const err = new Error(TRANSCRIPT_UNAVAILABLE_MSG);
     err.statusCode = 422;
@@ -257,7 +395,7 @@ async function fetchSocialVideoTranscript(videoUrl) {
     err.statusCode = 422;
     throw err;
   }
-  return text;
+  return { text, thumbnailUrl };
 }
 
 async function parseVideoToRecipe(url, outputLanguage) {
@@ -271,7 +409,7 @@ async function parseVideoToRecipe(url, outputLanguage) {
       console.log('YouTube transcript received, parsing recipe with AI...');
       const recipe = await parseTranscriptToRecipe(transcriptText, outputLanguage);
       const idMatch = normalizedUrl.match(/v=([a-zA-Z0-9_-]{11})/);
-      if (idMatch && !recipe.imageUrl) {
+      if (idMatch) {
         recipe.imageUrl = `https://img.youtube.com/vi/${idMatch[1]}/hqdefault.jpg`;
       }
       return { recipe, source: 'transcriptapi' };
@@ -286,9 +424,10 @@ async function parseVideoToRecipe(url, outputLanguage) {
   if (isSocialVideoUrl(url)) {
     console.log('Fetching social video transcript via Apify:', url.replace(/[#?].*/, ''));
     try {
-      const transcriptText = await fetchSocialVideoTranscript(url);
+      const { text: transcriptText, thumbnailUrl } = await fetchSocialVideoTranscript(url);
       console.log('Social video transcript received, parsing recipe with AI...');
       const recipe = await parseTranscriptToRecipe(transcriptText, outputLanguage);
+      if (thumbnailUrl) recipe.imageUrl = thumbnailUrl;
       return { recipe, source: 'apify' };
     } catch (err) {
       if (err.statusCode === 422 || err.statusCode === 408) throw err;
@@ -313,6 +452,10 @@ async function parseVideoToRecipe(url, outputLanguage) {
   const transcriptText = await waitForTranscript(transcriptId);
   console.log('Transcription completed, parsing recipe with AI...');
   const recipe = await parseTranscriptToRecipe(transcriptText, outputLanguage);
+  if (!recipe.imageUrl) {
+    const og = await tryFetchOgImageFromUrl(url);
+    if (og) recipe.imageUrl = og;
+  }
   return { recipe, source: 'assemblyai' };
 }
 

@@ -184,6 +184,30 @@ app.post('/promo/redeem', async (req, res) => {
   }
 });
 
+/** True if at least one promo row is still unredeemed (for hiding Promo UI). */
+app.get('/promo/availability', async (req, res) => {
+  const requestId = makeRequestId();
+  try {
+    if (!supabase) {
+      return res.json({ available: false });
+    }
+    const { count, error } = await supabase
+      .from('promo_codes')
+      .select('id', { count: 'exact', head: true })
+      .is('redeemed_at', null);
+
+    if (error) {
+      console.error('[Promo] Availability error:', { requestId, error });
+      return res.json({ available: false });
+    }
+    const available = typeof count === 'number' && count > 0;
+    return res.json({ available });
+  } catch (err) {
+    console.error('[Promo] Availability exception:', { requestId, err });
+    return res.json({ available: false });
+  }
+});
+
 app.get('/promo/entitlement', async (req, res) => {
   const requestId = makeRequestId();
   try {

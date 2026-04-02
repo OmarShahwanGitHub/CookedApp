@@ -11,6 +11,7 @@ import {
   getRecipeLimit,
   isRevenueCatConfigured,
   getLastOfferingsDebug,
+  getPromoCodesAvailable,
 } from '@/services/subscriptionService';
 
 const PRIVACY_URL = () => getBackendBaseUrl().replace(/\/$/, '');
@@ -33,10 +34,15 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [promoOffered, setPromoOffered] = useState(false);
   const limit = getRecipeLimit();
 
   useEffect(() => {
     loadOfferings();
+  }, []);
+
+  useEffect(() => {
+    getPromoCodesAvailable().then(setPromoOffered);
   }, []);
 
   const [offeringsDebug, setOfferingsDebug] = useState('');
@@ -164,15 +170,17 @@ export default function PaywallScreen({ onDismiss, onSubscribed }: PaywallScreen
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.promoLink}
-          onPress={() => {
-            onDismiss();
-            router.push('/redeem-code');
-          }}
-        >
-          <Text style={styles.promoLinkText}>Have a promo code?</Text>
-        </TouchableOpacity>
+        {promoOffered && (
+          <TouchableOpacity
+            style={styles.promoLink}
+            onPress={() => {
+              onDismiss();
+              router.push('/redeem-code');
+            }}
+          >
+            <Text style={styles.promoLinkText}>Have a promo code?</Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.legalLinks}>
           <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_URL())}>

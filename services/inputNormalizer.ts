@@ -36,6 +36,94 @@ function normalizeText(text: string): NormalizedInput {
   };
 }
 
+/** Decode common HTML entities in URL attributes. */
+function decodeHtmlUrlAttr(raw: string): string {
+  return raw
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .trim();
+}
+
+/** Resolve relative / protocol-relative URLs against the page URL. */
+function resolveUrlAgainstPage(pageUrl: string, href: string): string | undefined {
+  const h = decodeHtmlUrlAttr(href);
+  if (!h) return undefined;
+  if (/^https?:\/\//i.test(h)) return h;
+  if (h.startsWith('//')) return `https:${h}`;
+  try {
+    return new URL(h, pageUrl).href;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Collect likely preview image URLs from raw HTML (og/twitter/link/ld+json hints).
+ * Order is preference: first match wins when caller iterates.
+ */
+function extractCandidateImageUrls(html: string): string[] {
+  const seen = new Set<string>();
+  const push = (s: string | undefined) => {
+    const t = decodeHtmlUrlAttr(s || '');
+    if (t && !seen.has(t)) seen.add(t);
+  };
+
+  const metaPatterns: RegExp[] = [
+    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/gi,
+    /<meta[^>]+property=["']og:image:secure_url["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image:secure_url["']/gi,
+    /<meta[^>]+property=["']og:image:url["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image:url["']/gi,
+    /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/gi,
+    /<meta[^>]+name=["']twitter:image:src["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image:src["']/gi,
+    /<meta[^>]+itemprop=["']image["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+itemprop=["']image["']/gi,
+  ];
+
+  for (const re of metaPatterns) {
+    let m: RegExpExecArray | null;
+    const r = new RegExp(re.source, re.flags);
+    while ((m = r.exec(html)) !== null) {
+      if (m[1]) push(m[1]);
+    }
+  }
+
+  const linkPatterns: RegExp[] = [
+    /<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/gi,
+    /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']image_src["']/gi,
+  ];
+  for (const re of linkPatterns) {
+    let m: RegExpExecArray | null;
+    const r = new RegExp(re.source, re.flags);
+    while ((m = r.exec(html)) !== null) {
+      if (m[1]) push(m[1]);
+    }
+  }
+
+  const ldImage =
+    html.match(/"image"\s*:\s*"([^"]+)"/i) ||
+    html.match(/"image"\s*:\s*\[\s*"([^"]+)"/i) ||
+    html.match(/"@type"\s*:\s*"Recipe"[\s\S]{0,800}?"image"\s*:\s*"([^"]+)"/i);
+  if (ldImage?.[1]) push(ldImage[1]);
+
+  return Array.from(seen);
+}
+
+function pickPreviewImage(html: string, pageUrl: string, responseUrl?: string): string | undefined {
+  const base = responseUrl || pageUrl;
+  for (const raw of extractCandidateImageUrls(html)) {
+    const abs = resolveUrlAgainstPage(base, raw);
+    if (abs && /^https?:\/\//i.test(abs)) return abs;
+  }
+  return undefined;
+}
+
 async function normalizeUrl(url: string): Promise<NormalizedInput> {
   try {
     const response = await fetch(url, {
@@ -52,10 +140,8 @@ async function normalizeUrl(url: string): Promise<NormalizedInput> {
     const html = await response.text();
     const text = stripHtmlToText(html);
 
-    const ogImageMatch =
-      html.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i) ||
-      html.match(/<meta[^>]+name=["']twitter:image["'][^>]*content=["']([^"']+)["'][^>]*>/i);
-    const ogImageUrl = ogImageMatch?.[1];
+    const finalPageUrl = response.url || url;
+    const ogImageUrl = pickPreviewImage(html, url, finalPageUrl);
 
     return {
       text,

@@ -88,7 +88,8 @@ export async function parseRecipe(
 
   const parsed = await parseWithService(normalized.text, outputLanguage);
 
-  if (normalized.metadata?.ogImageUrl && !parsed.imageUrl) {
+  // Prefer scraped page preview (og/twitter/JSON-LD) over model guesses for link imports.
+  if (normalized.metadata?.ogImageUrl) {
     parsed.imageUrl = normalized.metadata.ogImageUrl;
   }
 

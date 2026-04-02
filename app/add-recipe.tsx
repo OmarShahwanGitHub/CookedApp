@@ -490,6 +490,17 @@ export default function AddRecipeScreen() {
         </ScrollView>
       </View>
 
+      {(selectedImages[0] || parsedData?.imageUrl) ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Photo</Text>
+          <Image
+            source={{ uri: selectedImages[0] || parsedData?.imageUrl || '' }}
+            style={styles.previewHeroImage}
+            resizeMode="cover"
+          />
+        </View>
+      ) : null}
+
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Ingredients</Text>
@@ -894,6 +905,12 @@ const styles = StyleSheet.create({
   },
   categoryTextActive: {
     color: Colors.white,
+  },
+  previewHeroImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+    backgroundColor: Colors.surfaceAlt,
   },
   ingredientRow: {
     flexDirection: 'row',

@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Plus, ChefHat, Clock, BookOpen, Info } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useRecipes, useRecipesByStatus } from '@/context/RecipeContext';
-import { canAddRecipe, checkSubscriptionStatus } from '@/services/subscriptionService';
+import { canAddRecipe, checkSubscriptionStatus, getPromoCodesAvailable } from '@/services/subscriptionService';
 import RecipeCard from '@/components/RecipeCard';
 import EmptyState from '@/components/EmptyState';
 import PaywallScreen from '@/components/PaywallScreen';
@@ -29,10 +29,15 @@ export default function HomeScreen() {
     refreshFreePlanCount();
   }, [recipes.length, refreshFreePlanCount]);
 
+  useEffect(() => {
+    refreshPromoAvailability();
+  }, [refreshPromoAvailability]);
+
   useFocusEffect(
     useCallback(() => {
       refreshFreePlanCount();
-    }, [refreshFreePlanCount])
+      refreshPromoAvailability();
+    }, [refreshFreePlanCount, refreshPromoAvailability])
   );
   const recentRecipes = [...recipes].sort((a, b) => 
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
@@ -97,9 +102,11 @@ export default function HomeScreen() {
           >
             <Info size={14} color={Colors.textSecondary} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/redeem-code')} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
-            <Text style={styles.redeemLink}>Promo</Text>
-          </TouchableOpacity>
+          {promoOffered && (
+            <TouchableOpacity onPress={() => router.push('/redeem-code')} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+              <Text style={styles.redeemLink}>Promo</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
       <ScrollView
