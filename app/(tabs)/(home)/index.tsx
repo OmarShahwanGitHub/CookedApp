@@ -16,6 +16,7 @@ export default function HomeScreen() {
   const savedRecipes = useRecipesByStatus('saved');
   const [showPaywall, setShowPaywall] = useState(false);
   const [freePlanCount, setFreePlanCount] = useState<{ current: number; limit: number } | null>(null);
+  const [promoOffered, setPromoOffered] = useState(false);
 
   const refreshFreePlanCount = useCallback(() => {
     checkSubscriptionStatus().then((status) => {
@@ -23,6 +24,10 @@ export default function HomeScreen() {
         setFreePlanCount({ current: status.currentCount, limit: status.limit });
       else setFreePlanCount(null);
     });
+  }, []);
+
+  const refreshPromoAvailability = useCallback(() => {
+    getPromoCodesAvailable().then(setPromoOffered);
   }, []);
 
   useEffect(() => {

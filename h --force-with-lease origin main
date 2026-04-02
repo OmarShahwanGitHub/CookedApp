@@ -1,0 +1,776 @@
+[33mcommit 5d9aac1c5c6fbbeb49ddc3315bf6ee3fc69264b8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Apr 2 18:02:06 2026 -0400
+
+    image parsing and promo code table
+
+[33mcommit b5b9828c241b60cd2fe02a8ca103c2eb5274c81b[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Mar 19 17:29:46 2026 -0400
+
+    rls policies
+
+[33mcommit 1ce19439851c4f0b21679e0d98299b7f393b555b[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Mar 19 17:23:26 2026 -0400
+
+    promo db access
+
+[33mcommit fa7658ae98813ecbc46216765816c57ca17b4221[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Mar 19 17:11:46 2026 -0400
+
+    promo codes fix#2
+
+[33mcommit 02447ec8bd08e08131ca4b5aca5c6d15714f921a[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Mar 19 17:08:10 2026 -0400
+
+    email
+
+[33mcommit ceec233f97daa1d8e8501494defd8f45d892778c[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Mar 19 16:54:17 2026 -0400
+
+    promo codes fix
+
+[33mcommit 155df097d61849ea6eee3616b6e718229aa5cb3d[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Mar 19 16:35:40 2026 -0400
+
+    promo codes test
+
+[33mcommit a853d043ca8a0f7091fd6aea9d15aa6817f2ed0d[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Tue Mar 17 18:36:46 2026 -0400
+
+    missing packages
+
+[33mcommit bdd49d4546a7da03da8d60ba7e68b5ee332b9295[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Tue Mar 17 18:29:56 2026 -0400
+
+    upload photo, edit batch, database with promo code table
+
+[33mcommit 72b3039543139765d44f10212fd08a7427b3077f[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Mon Mar 16 16:21:52 2026 -0400
+
+    insta, facebook, X, youtube, tiktok, pintrest
+
+[33mcommit c5e522994811215b191ed28058a8186c19cebf7b[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Fri Mar 13 18:32:19 2026 -0400
+
+    count
+
+[33mcommit 2b902fee50143be667cd580006e1ccf3cfd28836[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Fri Mar 13 18:17:26 2026 -0400
+
+    fix
+
+[33mcommit 969d3f46e628e86220df73bafde771c4cd624b40[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Fri Mar 13 17:50:37 2026 -0400
+
+    arabic fix
+
+[33mcommit daaf41b1be0ceb07d32f38cbd8711a1da91e4ed7[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Fri Mar 13 17:37:20 2026 -0400
+
+    fixed recipes used location
+
+[33mcommit e763b77ac3f8649056823e3cea8c84007abdda9d[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Mon Mar 9 16:27:52 2026 -0400
+
+    force app version env var
+
+[33mcommit 11ede2a0eef7ca80357f8212c0dc5fd30f066cd8[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Mon Mar 9 16:08:22 2026 -0400
+
+    keep track of 10 limit
+
+[33mcommit 035a2d0c24d4328a8ff9d542ecafabb454297c9d[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Mon Mar 9 15:52:20 2026 -0400
+
+    expo go testing
+
+[33mcommit b5b9a9af4e9eed2adddc54f100db6af115b88844[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Wed Feb 18 17:14:36 2026 -0500
+
+    updated ui
+
+[33mcommit d5a7ccd4034f2196daa3ec70a418d14956b262cf[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Wed Feb 18 14:54:34 2026 -0500
+
+    sandbox
+
+[33mcommit bcb81d1f5648157295c7f484f2b4f026578bc14e[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Wed Feb 18 13:22:15 2026 -0500
+
+    yr update
+
+[33mcommit 616b498fd9b4545ae2125b4e7c75e8a4d93922bb[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Wed Feb 18 12:53:13 2026 -0500
+
+    terms update
+
+[33mcommit 91855c9a053d96edba08f55ff139715d8dbfac08[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Sun Feb 15 20:13:45 2026 -0500
+
+    transcript api
+
+[33mcommit 3b90f3e87243adacc636495680d35e1907dc25bf[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Sun Feb 15 20:03:29 2026 -0500
+
+    apify
+
+[33mcommit 6b6c5094e4a5ad3e1fba843b511ac53efdac5cdb[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Sun Feb 15 19:05:27 2026 -0500
+
+    transcript fix
+
+[33mcommit 14e0c691ff7d8c0a30b0c1e3cb8e472a05373cbc[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Sun Feb 15 18:48:27 2026 -0500
+
+    render package#5
+
+[33mcommit 1dd360cee8e8d35dfb3404bd567f392d56e8e809[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Sun Feb 15 18:41:13 2026 -0500
+
+    render package#4
+
+[33mcommit 4c8ea271c13c55f9c08344a4571de7e6912ff7da[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Sun Feb 15 18:20:31 2026 -0500
+
+    render package#2
+
+[33mcommit a1e03ec6b387bbb4455ce0ba7c7e6dbb6595880d[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Sun Feb 15 18:16:13 2026 -0500
+
+    render package#2
+
+[33mcommit d89d18f6e5b49f658900d52dbc1377f2dfea7ffd[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Sun Feb 15 18:07:11 2026 -0500
+
+    render package
+
+[33mcommit eef687c052595b5000cf78288a8f18d193ff4e18[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Sun Feb 15 18:04:08 2026 -0500
+
+    logging
+
+[33mcommit cf00fd51079cd1bb3b80e9993ecf38d3510b85ae[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Sun Feb 15 17:38:24 2026 -0500
+
+    video
+
+[33mcommit 78c43e039129396c460ae82fd3bc0698d79d2544[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Fri Feb 13 16:29:55 2026 -0500
+
+    updated email
+
+[33mcommit e9c5cb1e607849f338019168a1bc7fa6c5cc9b15[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Fri Feb 13 16:21:14 2026 -0500
+
+    Serve privacy and support from backend
+
+[33mcommit 4865e6491ea98f969f407cc743c962ded7af5fe4[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Feb 12 23:25:40 2026 -0500
+
+    Add privacy policy page for App Store
+
+[33mcommit 92e995b1450ed3b0b75b7ef27de2ce0ad50392d8[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Feb 12 22:20:26 2026 -0500
+
+    remove extra x
+
+[33mcommit 972c9837fec1745b0bd65dc9be7bc8ddaae2d414[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Feb 12 22:19:10 2026 -0500
+
+    on screen logs
+
+[33mcommit 7b7145e3e28e373bbd0367f0dc29bf269393141a[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Feb 12 22:08:03 2026 -0500
+
+    paywall logging
+
+[33mcommit fd11022e9765bf772707010c4854eff74b60ec9e[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Feb 12 21:14:16 2026 -0500
+
+    paywall fix
+
+[33mcommit a158c4699acd3e480a63ec3d55fd2ae8a9292c5b[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Feb 12 20:45:37 2026 -0500
+
+    scrolling paywall
+
+[33mcommit 045f0c5e33e4c3f94ef5d07f2a014c32efa63b93[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Feb 12 20:19:05 2026 -0500
+
+    skip step
+
+[33mcommit 9b3e060d2c1f345757ea8187603daa9f45299724[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Feb 12 20:14:15 2026 -0500
+
+    edit mode
+
+[33mcommit 50b2d333da91d993d39e1da411cc3ad968c98568[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Feb 12 19:45:00 2026 -0500
+
+    env
+
+[33mcommit e998e919677aa063197fecf8361deaac2a001f6f[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Thu Feb 12 19:06:03 2026 -0500
+
+    render prep
+
+[33mcommit ac7d2ffd5fd744a97de856ec92e088053e6ac7dd[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 19:05:20 2026 +0000
+
+    Improve YouTube caption fetching by using yt-dlp
+    
+    Replace custom caption parsing logic with yt-dlp to reliably fetch auto-generated and manual English subtitles from YouTube videos.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: ee675d34-93b6-4f07-930c-86fd2bb527fa
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/lER46Qt
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 5aa34d1559f1a70f3ff82dd5b7ad77d8a55085a0[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 18:57:18 2026 +0000
+
+    Update video processing to use yt-dlp for audio extraction
+    
+    Replaced the deprecated '@distube/ytdl-core' library with 'yt-dlp' for more reliable YouTube audio downloading via child_process.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 0acf8fda-f840-4fad-b05a-3e4474a42b0b
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/lER46Qt
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 577cdabdc2140bfdb0f00f4ba1c14ce4d42fbd4f[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 18:47:41 2026 +0000
+
+    Integrate video parsing into development server for easier access
+    
+    Integrates the video parsing functionality directly into the Metro development server via custom middleware, eliminating the need for a separate backend server and IP address configuration during development. Updates documentation to reflect this change.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 9bacdefa-51d2-437c-81cd-bb6774c91515
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/lER46Qt
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit f4e1a4757f23f80662e86b412496038656499bbe[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 17:31:46 2026 +0000
+
+    Add logging for the video backend URL
+    
+    Log the full backend URL being used for parsing videos to aid in debugging network issues.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 477363d1-5c4f-4157-a89d-c3a190ab94bc
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/lER46Qt
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit c34697c355dc8816edbb8ee15b6fd83218c970fd[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 17:18:03 2026 +0000
+
+    Allow local network connections for iOS development
+    
+    Add NSAllowsLocalNetworking to app.json to permit HTTP requests to the local development backend.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 70e6f14b-1a49-4a24-a513-a54e8db7a88a
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/lER46Qt
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 6c5bad803da541f3dc69a8eb54965fec15deac3c[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 17:10:21 2026 +0000
+
+    Update video parsing to use correct backend URL automatically
+    
+    Automatically detect and use the computer's LAN IP for the video backend URL when running on a device, ensuring connectivity.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 662609fe-4dbc-4085-84e5-1ad1c930cf39
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/lER46Qt
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit cfab97f5b558c09180c21b6a54b030bd0e6d8edd[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 05:31:28 2026 +0000
+
+    Update application to correctly connect to the video backend
+    
+    Remove http-proxy-middleware dependency and update backend connection URL to http://localhost:3001 in the frontend.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: ba98983c-2026-486c-ba34-3a24892c42a6
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/lER46Qt
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 90480f4a2003dd37763467cd58c5d64c36eaeecc[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 05:17:37 2026 +0000
+
+    Restructure backend to serve API and proxy frontend requests
+    
+    Install http-proxy-middleware, update server entry point to port 5000 to proxy Metro on port 8080, and adjust frontend URL configuration.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: aac7ad55-d64e-4757-a691-7f4b95cd07f7
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/lER46Qt
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit a5e189e86891ce55220a9bc0c404c3e478c595e3[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 04:53:48 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 888bbf9d-356b-4915-a1b3-377bf184401f
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/yiBXoAz
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 5a913a19005170ea00bc291cf6759839d9e9b5ea[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 04:53:35 2026 +0000
+
+    Integrate backend for advanced video processing and AI recipe parsing
+    
+    Introduces a Node.js backend using Express for processing video inputs. This backend handles fetching YouTube captions and audio, transcribing audio using OpenAI Whisper, and parsing the content into recipes. The frontend is updated to directly call this backend for video inputs. The AI provider hierarchy is now configurable via environment variables (Anthropic, OpenAI, Gemini), and platform-managed AI services are excluded.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: ef12faa1-79a4-41e2-844f-98f287a55815
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/yiBXoAz
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 1175283e48c99335bfd98add72e28b7c896123e7[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 04:11:06 2026 +0000
+
+    Add backend service to parse video content into recipes
+    
+    Adds a Node.js backend service with a POST /parse-video endpoint that uses ytdl-core, ffmpeg, and OpenAI Whisper to transcribe video content and then parse it into structured recipe JSON.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 546847fd-e2dc-45dc-9687-30b39650054e
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/pHLQ8S2
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 6c6cb61cce354ebc730a2d63752c2d76810e0263[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 04:08:16 2026 +0000
+
+    Correctly display upcoming recipe dates by fixing timezone issues
+    
+    Adjust date parsing across multiple components (HomeScreen, RecipeDetailScreen, RecipeCard, notificationService) to append 'T00:00:00' to ensure dates are interpreted in local time, resolving a previous one-day offset.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 664fb1b6-873c-44f0-b01d-d4e017e4e7d4
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/pHLQ8S2
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit af7ac9c7ae3906f08904c2cfc9e1b71de3b35573[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 03:59:40 2026 +0000
+
+    Add reminder option to cook again feature and move button
+    
+    Introduce a new toggle for meal reminders in the cook again modal and reposition the "Cook Again" button to a more prominent location.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 4e60a40a-fe95-48c9-833e-8f7c9a34daed
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/pHLQ8S2
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 2e411fbe7d99ee101482d637c6141c926b132a02[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 03:49:03 2026 +0000
+
+    Add a button to easily cook a recipe again with updated options
+    
+    Adds a "Cook Again" button to cooked recipes, allowing users to reset ingredients, set a cook date, and edit ingredients before adding to the grocery list. Updates RecipeContext with a `cookAgain` function and modifies the recipe detail screen to include the new button and modal.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 7b79fff8-42b4-440d-8238-6e1c7e3eda1b
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/pHLQ8S2
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 64921d8e6abdc45c96cc377b100e0d078cf7293e[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 02:42:42 2026 +0000
+
+    Add collapsible sections to the grocery list screen
+    
+    Refactors the grocery screen to group ingredients by recipe, with each recipe section being collapsible by default. Adds UI elements for progress tracking within each collapsed section and improves visual hierarchy.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 2e242edb-72ce-40e7-8393-fa4c0d8744df
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/pHLQ8S2
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 892e6932aceb67776a677a55547b3c69bd95433b[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 02:24:40 2026 +0000
+
+    Adjust image size limits and format conversions for reliable API uploads
+    
+    Update image processing logic to use base64 string length for Anthropic's 5MB limit, ensuring all images are normalized to JPEG and verified before sending.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 886f9e32-2584-40d8-b068-24f35aca03b4
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/pHLQ8S2
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 1732a405701630ce2f6c419651ef5a2657337ec2[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 02:10:55 2026 +0000
+
+    Ensure all images are converted to JPEG format for reliable API processing
+    
+    Modify `recipeParser.ts` to always normalize image URIs to JPEG format using `ImageManipulator.manipulateAsync`, regardless of original size, addressing potential HEIC format issues with AI providers.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 107b182a-3438-4fa3-b617-a4ceb58c7bb6
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 5dc7e0001f70e7fa2f4cab9f16ad7d29c91c56e3[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 02:06:34 2026 +0000
+
+    Add image compression to handle large uploads
+    
+    Install `expo-image-manipulator` and update image processing logic to compress images before sending to the API, resolving upload errors due to size limits. Addresses dependency conflicts by using `--legacy-peer-deps`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 294cdf02-fbb4-4d19-8956-e50f308a17f3
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit a824fb66bb7d181c74d9eeceb942f336a00b2097[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Wed Feb 11 01:52:35 2026 +0000
+
+    Improve image upload by automatically compressing large files
+    
+    Install `expo-image-manipulator` and implement image compression logic to resize images exceeding 4MB before sending them to the API, ensuring compliance with size limits.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 8593c6fa-63fa-4d4f-9559-b1982816914f
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 71d44a5f7939e42193471c6295b2fb435dccdd41[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 23:36:01 2026 +0000
+
+    Improve API error reporting and add Anthropic browser access header
+    
+    Enhance API error logging across Anthropic, OpenAI, and Gemini. Add the `anthropic-dangerous-direct-browser-access` header to resolve Anthropic 400 errors due to insufficient credits and provide more detailed error messages for all providers.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: c955e788-9a84-4acf-adde-8962ec11d37e
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 217cb214abd578b0c00a6381b1fd5733e614b99f[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 23:31:54 2026 +0000
+
+    Improve recipe parsing by enhancing error handling and API integrations
+    
+    Updates API calls to include detailed error logging, the necessary Anthropic browser access header, and modifies image parsing functions to accept ImageData arrays.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: ff5b1fbd-f2e6-496f-b055-e6e39e871ef6
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 4e368e7026094370f7bdd99068e181f7f89ffe7f[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 21:31:57 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: b21f8db6-bd1a-4d4b-8796-bf1e8b97a12f
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 4ff2e9a396d6f72747516b62cfad2e0e9c63284d[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 21:31:44 2026 +0000
+
+    Enable recipe image and URL parsing using LLM providers
+    
+    Update recipe parsing services to support image input via LLM vision APIs and to correctly handle environment variables for API keys.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 737098fe-2f7c-4ce6-ad66-cf20f8f1cf34
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit ab874373253b8594f3e50702e0e5111c459b0e76[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 17:36:14 2026 +0000
+
+    Prioritize AI recipe parsing using multiple key providers
+    
+    Update recipe parsing logic to attempt Anthropic, then OpenAI, then Gemini API keys in sequence, falling back to a basic parser if all keys are missing or fail.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: bee73ec5-cb41-46ac-99df-e65b06793581
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 0fae9462e9015ece1dbdb718c012811a487305f0[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 17:10:15 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 64679dd6-e273-4df0-b5b2-41eb34648fe8
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 5faa8264a6afd4766146de799148489d617e449a[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 17:02:55 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 27c2899a-bd3e-41d9-8da5-a09582ebb94a
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 1aa85104caf4f9a1e51961ef4eff4f0722938cd0[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 17:02:16 2026 +0000
+
+    Integrate subscription services and enhance recipe parsing capabilities
+    
+    This commit introduces several key changes:
+    - **Dependency Management**: Removed `@rork-ai/toolkit-sdk` and related dependencies. Cleaned up `package.json` by removing unused packages like `expo-location` and `expo-symbols`. Updated `metro.config.js` to remove the Rork metro plugin.
+    - **Recipe Parsing Enhancements**:
+        - Refactored `utils/parseRecipe.ts` to `services/recipeParser.ts`.
+        - Implemented a new LLM-based parsing mechanism that falls back to a basic parser if API keys are not found.
+        - Introduced `services/inputNormalizer.ts` to handle different input types (text, URL, image, video) and normalize them for parsing.
+        - Updated `app.json` to include `expo-notifications` plugin.
+        - Modified `app/add-recipe.tsx` to accommodate new parsing logic and input types.
+        - Updated `types/recipe.ts` to include 'video' as a `RecipeSource`.
+    - **Subscription Integration**:
+        - Added `react-native-purchases` dependency.
+        - Implemented `services/subscriptionService.ts` for RevenueCat integration, including checking subscription status, managing free tier limits, and handling purchases/restores.
+        - Added a `components/PaywallScreen.tsx` component for the subscription paywall UI.
+        - Updated `app/_layout.tsx` to initialize subscription services.
+        - Updated `context/RecipeContext.tsx` to integrate subscription checks for recipe limits.
+    - **Notifications**:
+        - Added `services/notificationService.ts` for local notification scheduling and cancellation.
+        - Integrated notification scheduling for recipe reminders in `app/recipe/[id].tsx` and `app/_layout.tsx`.
+    - **Configuration and Documentation**:
+        - Updated `app.json` with new bundle identifiers and scheme.
+        - Modified `replit.md` to reflect the new architecture, dependencies, and features, including API key instructions and monetization details.
+        - Updated `package.json` with a new name and added iOS start script.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 5583345b-8ed9-4085-96c8-a8a840af47c8
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/fB9yBP6
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 1b4c9d3952c80789d3a09d496a26630dfbd246c9[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 16:46:11 2026 +0000
+
+    Update project setup to improve stability and streamline development
+    
+    Configure Expo web server, resolve dependency issues, and establish a clean project structure for React Native development.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: a031607a-9a37-4d98-9484-499b30b03459
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/Cd07Qct
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit e5bd411c06eb2176b5009bbbe79ee24c40726729[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 05:10:59 2026 +0000
+
+    Saved progress at the end of the loop
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: full_checkpoint
+    Replit-Commit-Event-Id: 3ef5d74b-7fa7-489e-85dd-9349cec3e5da
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/Cd07Qct
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit c7e178eff7dd06d9d1402eeb91e3396a87e4fa14[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 05:10:52 2026 +0000
+
+    Update scripts to configure web development environment
+    
+    Update package.json scripts to correctly configure the Expo web environment for development and export. Add replit.md documentation.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 65ceae99-fc6a-44a2-9cc2-db74e26a16a0
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/Cd07Qct
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 8efc3c8547707756a5238a7102f4d51e67c59efc[m
+Author: oshahwan21 <54521737-oshahwan21@users.noreply.replit.com>
+Date:   Tue Feb 10 05:09:43 2026 +0000
+
+    Update scripts to run Expo web on a custom port and host
+    
+    Modify the `package.json` scripts to use `expo start --web --port 5000 --host 0.0.0.0`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 0e6d516a-ee4c-477f-b6b1-acebb95bc2fc
+    Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+    Replit-Commit-Event-Id: 00a9fa35-e309-405c-a343-50dd88702556
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/01d6f1d3-8732-4f09-acb9-64b4b7b52b54/0e6d516a-ee4c-477f-b6b1-acebb95bc2fc/Cd07Qct
+    Replit-Helium-Checkpoint-Created: true
+
+[33mcommit 8e38ccc2544087073b042088f04bdb75ff054983[m
+Merge: cd1f0e5 dd51b61
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Mon Feb 9 23:42:20 2026 -0500
+
+    merge
+
+[33mcommit cd1f0e52d3554b0f3d6271fe95112ddfb661266a[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Mon Feb 9 23:40:50 2026 -0500
+
+    packages
+
+[33mcommit dd51b61b0f58c788c3b238dfb905636881ae3eec[m
+Author: Rork <agent@rork.com>
+Date:   Tue Feb 10 04:25:27 2026 +0000
+
+    Fix screen overlap issues to make all buttons and lists visible
+
+[33mcommit e67d7e59df861ec8e548ac496d9341133eecd0c2[m
+Author: Rork <agent@rork.com>
+Date:   Tue Feb 10 04:02:18 2026 +0000
+
+    Fix for app loading error
+
+[33mcommit 1f446a1f48e8716ad943c9b6b36c41166817bc8d[m
+Author: Omar Shahwan <oshahwan21@gmail.com>
+Date:   Wed Feb 4 14:48:12 2026 -0500
+
+    test commit
+
+[33mcommit 59e0e59d6da4d6255b415e7366bda1d03c5c72df[m
+Author: Rork <agent@rork.com>
+Date:   Wed Feb 4 19:45:18 2026 +0000
+
+    Initial commit
+
+[33mcommit 7a728ea73a30ab5fb7cddbfb301ac391a4ea87a4[m
+Author: OmarShahwanGitHub <136381236+OmarShahwanGitHub@users.noreply.github.com>
+Date:   Wed Feb 4 14:45:11 2026 -0500
+
+    Initial commit
