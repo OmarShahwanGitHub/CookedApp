@@ -43,7 +43,9 @@
         {
           "icon": "./assets/images/icon.png"
         }
-      ]
+      ],
+      "expo-video",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true

@@ -31,6 +31,13 @@ import { useRecipes } from '@/context/RecipeContext';
 import { getCategoryByValue, RECIPE_CATEGORIES } from '@/constants/categories';
 import { Ingredient, RecipeCategory } from '@/types/recipe';
 import { generateId } from '@/utils/parseRecipe';
+import {
+  isLikelyVideoHostingUrl,
+  extractYouTubeVideoId,
+  extractVimeoId,
+  isLikelyDirectVideoUrl,
+} from '@/utils/videoSource';
+import RecipeSourceVideoPlayer from '@/components/RecipeSourceVideoPlayer';
 
 function scaleQuantity(quantity: string, factor: number): string {
   if (!quantity || !quantity.trim() || factor === 1) return quantity;
@@ -105,6 +112,45 @@ export default function RecipeDetailScreen() {
       setServingsText('1');
     }
   }, [recipe]);
+
+  useEffect(() => {
+    if (!recipe || isEditing || instructionsCollapsed) return;
+    const url = recipe.sourceUrl;
+    let host: string | null = null;
+    if (url) {
+      try {
+        host = new URL(url).hostname;
+      } catch {
+        host = 'invalid_url';
+      }
+    }
+    const yt = url ? extractYouTubeVideoId(url) : null;
+    const vm = url ? extractVimeoId(url) : null;
+    const direct = url ? isLikelyDirectVideoUrl(url) : false;
+    const inlineEligible =
+      !!url &&
+      (recipe.source === 'video' || (recipe.source === 'link' && isLikelyVideoHostingUrl(url)));
+    const playerKind = yt
+      ? 'youtube_webview'
+      : vm
+        ? 'vimeo_webview'
+        : direct
+          ? 'expo_video'
+          : url && inlineEligible
+            ? 'fallback_open_browser'
+            : 'none';
+    console.log('[Recipe][Instructions] video status', {
+      recipeId: recipe.id,
+      source: recipe.source,
+      hasSourceUrl: Boolean(url),
+      sourceUrlHost: host,
+      youtubeVideoId: yt,
+      vimeoId: vm,
+      directFileUrl: direct,
+      inlinePlayerEligible: inlineEligible,
+      playerKind,
+    });
+  }, [recipe, isEditing, instructionsCollapsed]);
 
   if (!recipe) {
     return (
@@ -475,6 +521,17 @@ export default function RecipeDetailScreen() {
             ))}
           </View>
 
+          {!isEditing &&
+            recipe.sourceUrl &&
+            (recipe.source === 'video' ||
+              (recipe.source === 'link' && isLikelyVideoHostingUrl(recipe.sourceUrl))) && (
+              <View style={styles.section}>
+                <Text style={styles.sourceVideoTitle}>Source video</Text>
+                <Text style={styles.sourceVideoCaption}>Play along while you follow the steps.</Text>
+                <RecipeSourceVideoPlayer sourceUrl={recipe.sourceUrl} />
+              </View>
+            )}
+
           <View style={styles.section}>
             <TouchableOpacity
               style={styles.sectionHeader}
@@ -842,6 +899,18 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: Colors.text,
     marginBottom: 16,
+  },
+  sourceVideoTitle: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    marginBottom: 6,
+  },
+  sourceVideoCaption: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 12,
+    lineHeight: 20,
   },
   sectionCount: {
     fontSize: 14,

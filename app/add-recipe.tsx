@@ -224,7 +224,6 @@ export default function AddRecipeScreen() {
   };
 
   const handleSaveRecipe = async () => {
-    console.log('[Recipe][Save] pressed');
     if (!title.trim()) {
       Alert.alert('Missing Title', 'Please enter a recipe title.');
       return;
@@ -236,9 +235,7 @@ export default function AddRecipeScreen() {
     }
 
     const allowed = await canAddRecipe();
-    console.log('[Recipe][Save] canAddRecipe=', allowed);
     if (!allowed) {
-      console.log('[Recipe][Save] blocked — showing paywall');
       setShowPaywall(true);
       return;
     }
@@ -259,7 +256,6 @@ export default function AddRecipeScreen() {
         cookDate: cookDate || undefined,
         reminderEnabled,
       });
-      console.log('[Recipe][Save] addRecipe returned id=', created?.id);
     } catch (e) {
       console.error('[Recipe][Save] addRecipe threw:', e);
       Alert.alert('Could not save', 'Something went wrong saving this recipe. Check the logs.');

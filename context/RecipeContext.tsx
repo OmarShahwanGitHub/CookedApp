@@ -18,7 +18,6 @@ async function loadRecipes(): Promise<Recipe[]> {
 
 async function saveRecipes(recipes: Recipe[]): Promise<void> {
   const json = JSON.stringify(recipes);
-  console.log('[Recipe][Storage] writing', recipes.length, 'recipe(s),', json.length, 'bytes');
   try {
     await AsyncStorage.setItem(RECIPES_STORAGE_KEY, json);
   } catch (error) {
@@ -61,7 +60,6 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
   const { mutate: syncRecipes } = useMutation({
     mutationFn: saveRecipes,
     onSuccess: (_void, savedList) => {
-      console.log('[Recipe][Storage] save OK, syncing query cache');
       queryClient.setQueryData(['recipes'], savedList);
     },
     onError: (err, savedList) => {
@@ -76,7 +74,6 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    console.log('[Recipe][Add]', newRecipe.title?.slice(0, 60), 'id=', newRecipe.id);
     setRecipes((prev) => {
       const updated = [...prev, newRecipe];
       syncRecipes(updated);
