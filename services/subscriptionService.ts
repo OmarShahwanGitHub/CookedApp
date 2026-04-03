@@ -5,6 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const FREE_RECIPE_LIMIT = 10;
 const LIFETIME_COUNT_KEY = 'cooked_lifetime_recipe_count';
 const ANON_USER_ID_KEY = 'cooked_anon_user_id';
+/** Last successful redeem on this install — used to repair user_id if stable id changed (local_* → anon_*). */
+const PROMO_LAST_CODE_KEY = 'cooked_promo_last_code';
+const PROMO_LAST_USER_ID_KEY = 'cooked_promo_last_user_id';
 
 let Purchases: any = null;
 
@@ -147,6 +150,18 @@ function getBackendBaseUrl(): string | null {
   return null;
 }
 
+async function fetchPromoEntitlementActive(base: string, userId: string): Promise<boolean> {
+  const res = await fetch(`${base}/promo/entitlement?user_id=${encodeURIComponent(userId)}`);
+  const data = await res.json().catch(() => ({}));
+  const active = !!data?.active;
+  console.log('[Promo][Entitlement]', { ok: res.ok, active, userId: userId.slice(0, 14) + '…' });
+  if (__DEV__ && !active && res.ok) {
+    console.log('[Promo][Entitlement] full user_id (for Supabase promo_codes.user_id):', userId);
+  }
+  if (!res.ok) return false;
+  return active;
+}
+
 async function hasActivePromo(): Promise<boolean> {
   const base = getBackendBaseUrl();
   if (!base) {
@@ -155,16 +170,52 @@ async function hasActivePromo(): Promise<boolean> {
   }
   try {
     const userId = await getStableUserId();
-    const url = `${base}/promo/entitlement?user_id=${encodeURIComponent(userId)}`;
-    const res = await fetch(url);
-    const data = await res.json().catch(() => ({}));
-    const active = !!data?.active;
-    console.log('[Promo][Entitlement]', { ok: res.ok, active, userId: userId.slice(0, 14) + '…' });
-    if (!res.ok) return false;
-    return active;
+    let active = await fetchPromoEntitlementActive(base, userId);
+    if (active) return true;
+
+    const lastCode = await AsyncStorage.getItem(PROMO_LAST_CODE_KEY);
+    const lastUser = await AsyncStorage.getItem(PROMO_LAST_USER_ID_KEY);
+    if (lastCode && lastUser && lastUser !== userId) {
+      const mig = await fetch(`${base}/promo/migrate-user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: lastCode,
+          old_user_id: lastUser,
+          new_user_id: userId,
+        }),
+      });
+      const md = await mig.json().catch(() => ({}));
+      if (mig.ok && md.success) {
+        console.log('[Promo] Migrated promo row to current device user_id');
+        try {
+          await AsyncStorage.setItem(PROMO_LAST_USER_ID_KEY, userId);
+        } catch {}
+        active = await fetchPromoEntitlementActive(base, userId);
+        return active;
+      }
+      if (__DEV__) {
+        console.log('[Promo] migrate-user skipped or failed', { status: mig.status, md });
+      }
+    }
+
+    return false;
   } catch (err) {
     console.warn('[Promo][Entitlement] request failed:', err);
     return false;
+  }
+}
+
+/** Call after a successful redeem so we can repair user_id if the stable id changes later. */
+export async function savePromoRedeemSnapshot(code: string, userId: string): Promise<void> {
+  try {
+    const c = String(code).trim().toUpperCase();
+    await AsyncStorage.multiSet([
+      [PROMO_LAST_CODE_KEY, c],
+      [PROMO_LAST_USER_ID_KEY, userId],
+    ]);
+  } catch (e) {
+    console.warn('[Promo] Could not save redeem snapshot:', e);
   }
 }
 

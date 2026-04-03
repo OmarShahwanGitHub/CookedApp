@@ -188,6 +188,73 @@ app.post('/promo/redeem', async (req, res) => {
   }
 });
 
+/**
+ * Fix promo row user_id when the app switched stable ids (e.g. local_* → anon_* after SecureStore fix).
+ * Requires proof: old_user_id must match the row. Does not extend expiry.
+ */
+app.post('/promo/migrate-user', async (req, res) => {
+  const requestId = makeRequestId();
+  try {
+    if (!supabase) {
+      return res.status(503).json({ error: 'Promo service unavailable.', request_id: requestId });
+    }
+    const { code, old_user_id: oldUserId, new_user_id: newUserId } = req.body || {};
+    if (!code || !oldUserId || !newUserId) {
+      return res.status(400).json({
+        error: 'code, old_user_id, and new_user_id are required.',
+        request_id: requestId,
+      });
+    }
+    const raw = String(code).trim();
+    const normalized = raw.toUpperCase();
+    const codeCandidates = raw === normalized ? [raw] : [raw, normalized];
+
+    const { data: row, error: fetchError } = await supabase
+      .from('promo_codes')
+      .select('*')
+      .in('code', codeCandidates)
+      .limit(1)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('[Promo] migrate-user fetch error:', { requestId, fetchError });
+      return res.status(500).json({ error: 'Promo lookup failed.', request_id: requestId });
+    }
+    if (!row) {
+      return res.status(404).json({ error: 'Invalid code.', request_id: requestId });
+    }
+    if (!row.redeemed_at) {
+      return res.status(400).json({ error: 'Code not redeemed.', request_id: requestId });
+    }
+    if (row.user_id !== oldUserId) {
+      return res.status(403).json({ error: 'Old user id does not match this promo.', request_id: requestId });
+    }
+    if (oldUserId === newUserId) {
+      return res.json({ success: true, already: true, request_id: requestId });
+    }
+    const expires = row.entitlement_expires_at ? new Date(row.entitlement_expires_at) : null;
+    if (!expires || Date.now() > expires.getTime()) {
+      return res.status(410).json({ error: 'Promo access expired.', request_id: requestId });
+    }
+
+    const { error: updateError } = await supabase
+      .from('promo_codes')
+      .update({ user_id: newUserId })
+      .eq('id', row.id);
+
+    if (updateError) {
+      console.error('[Promo] migrate-user update error:', { requestId, updateError });
+      return res.status(500).json({ error: 'Could not update user.', request_id: requestId });
+    }
+
+    console.info('[Promo] migrate-user success', { requestId, rowId: row.id, from: oldUserId, to: newUserId });
+    return res.json({ success: true, request_id: requestId });
+  } catch (err) {
+    console.error('[Promo] migrate-user error:', { requestId, err });
+    return res.status(500).json({ error: 'Failed to migrate.', request_id: requestId });
+  }
+});
+
 /** True if at least one promo row is still unredeemed (for hiding Promo UI). */
 app.get('/promo/availability', async (req, res) => {
   const requestId = makeRequestId();

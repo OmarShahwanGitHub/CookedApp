@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
-import { getStableUserId } from '@/services/subscriptionService';
+import { getStableUserId, savePromoRedeemSnapshot } from '@/services/subscriptionService';
 import Constants from 'expo-constants';
 
 function getBackendBaseUrl(): string | null {
@@ -81,6 +81,8 @@ export default function RedeemCodeScreen() {
         body: data,
       });
       if (res.ok && data.success) {
+        const redeemedCode = code.trim().toUpperCase();
+        await savePromoRedeemSnapshot(redeemedCode, userId);
         const through = data.entitlement_expires_at
           ? formatAccessThrough(data.entitlement_expires_at)
           : '';
