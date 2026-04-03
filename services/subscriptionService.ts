@@ -86,9 +86,19 @@ export async function getStableUserId(): Promise<string> {
       id = uuid;
     }
     return id;
-  } catch {
-    const fallback = 'local_' + Math.random().toString(36).slice(2);
-    return fallback;
+  } catch (e) {
+    // Never return a fresh random ID every call — promo redeem + entitlement must share the same user_id.
+    console.warn('[Subscription] SecureStore unavailable, falling back to AsyncStorage for user id:', e);
+    let id = await AsyncStorage.getItem(ANON_USER_ID_KEY);
+    if (!id) {
+      id = 'local_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      try {
+        await AsyncStorage.setItem(ANON_USER_ID_KEY, id);
+      } catch (storeErr) {
+        console.error('[Subscription] AsyncStorage fallback failed:', storeErr);
+      }
+    }
+    return id;
   }
 }
 
@@ -105,14 +115,21 @@ function getBackendBaseUrl(): string | null {
 
 async function hasActivePromo(): Promise<boolean> {
   const base = getBackendBaseUrl();
-  if (!base) return false;
+  if (!base) {
+    console.log('[Promo][Entitlement] skipped — no EXPO_PUBLIC_VIDEO_BACKEND_URL (or dev host)');
+    return false;
+  }
   try {
     const userId = await getStableUserId();
-    const res = await fetch(`${base}/promo/entitlement?user_id=${encodeURIComponent(userId)}`);
-    if (!res.ok) return false;
+    const url = `${base}/promo/entitlement?user_id=${encodeURIComponent(userId)}`;
+    const res = await fetch(url);
     const data = await res.json().catch(() => ({}));
-    return !!data?.active;
-  } catch {
+    const active = !!data?.active;
+    console.log('[Promo][Entitlement]', { ok: res.ok, active, userId: userId.slice(0, 14) + '…' });
+    if (!res.ok) return false;
+    return active;
+  } catch (err) {
+    console.warn('[Promo][Entitlement] request failed:', err);
     return false;
   }
 }
@@ -202,6 +219,7 @@ export async function checkSubscriptionStatus(): Promise<{
 
   const promoActive = await hasActivePromo();
   if (promoActive) {
+    console.log('[Subscription] Active promo — unlimited recipes');
     return {
       isSubscribed: true,
       canAddRecipe: true,
@@ -211,6 +229,7 @@ export async function checkSubscriptionStatus(): Promise<{
   }
 
   const currentCount = await getLifetimeRecipeCount();
+  console.log('[Subscription] Free tier', { currentCount, limit: FREE_RECIPE_LIMIT });
   return {
     isSubscribed: false,
     canAddRecipe: currentCount < FREE_RECIPE_LIMIT,
@@ -236,7 +255,14 @@ export async function getOfferings(): Promise<any[]> {
   const purchases = await getPurchases();
   if (!purchases) {
     lastOfferingsDebug = 'Purchases module not available (e.g. web or missing native module).';
-    console.warn('[RevenueCat] getOfferings:', lastOfferingsDebug);
+    // Expo Go has no native IAP — expected. Use an EAS dev/production build to test RevenueCat.
+    if (Constants.appOwnership === 'expo') {
+      if (__DEV__) {
+        console.log('[RevenueCat]', lastOfferingsDebug, '(normal in Expo Go)');
+      }
+    } else {
+      console.warn('[RevenueCat] getOfferings:', lastOfferingsDebug);
+    }
     return [];
   }
 

@@ -224,6 +224,7 @@ export default function AddRecipeScreen() {
   };
 
   const handleSaveRecipe = async () => {
+    console.log('[Recipe][Save] pressed');
     if (!title.trim()) {
       Alert.alert('Missing Title', 'Please enter a recipe title.');
       return;
@@ -235,26 +236,35 @@ export default function AddRecipeScreen() {
     }
 
     const allowed = await canAddRecipe();
+    console.log('[Recipe][Save] canAddRecipe=', allowed);
     if (!allowed) {
+      console.log('[Recipe][Save] blocked — showing paywall');
       setShowPaywall(true);
       return;
     }
 
     const source: RecipeSource = mode === 'text' ? 'text' : mode === 'link' ? 'link' : mode === 'video' ? 'video' : 'image';
 
-    addRecipe({
-      title: title.trim(),
-      description: parsedData?.description,
-      ingredients: ingredients.filter(i => i.name.trim()),
-      steps: steps.filter(s => s.instruction.trim()),
-      category,
-      status: 'saved',
-      source,
-      sourceUrl: mode === 'link' ? linkInput : mode === 'video' ? videoInput : undefined,
-      imageUri: selectedImages[0] || parsedData?.imageUrl,
-      cookDate: cookDate || undefined,
-      reminderEnabled,
-    });
+    try {
+      const created = addRecipe({
+        title: title.trim(),
+        description: parsedData?.description,
+        ingredients: ingredients.filter(i => i.name.trim()),
+        steps: steps.filter(s => s.instruction.trim()),
+        category,
+        status: 'saved',
+        source,
+        sourceUrl: mode === 'link' ? linkInput : mode === 'video' ? videoInput : undefined,
+        imageUri: selectedImages[0] || parsedData?.imageUrl,
+        cookDate: cookDate || undefined,
+        reminderEnabled,
+      });
+      console.log('[Recipe][Save] addRecipe returned id=', created?.id);
+    } catch (e) {
+      console.error('[Recipe][Save] addRecipe threw:', e);
+      Alert.alert('Could not save', 'Something went wrong saving this recipe. Check the logs.');
+      return;
+    }
 
     router.back();
   };

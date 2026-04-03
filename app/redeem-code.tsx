@@ -117,8 +117,8 @@ export default function RedeemCodeScreen() {
         >
           <Text style={styles.title}>Redeem promo code</Text>
           <Text style={styles.subtitle}>
-            One-time codes unlock unlimited recipes for the number of days on your code. You keep access through the end
-            of the last day (e.g. a 3-day code = full access on day 1, 2, and 3).
+            Access lasts through the end of the last calendar day of your promo (UTC). For example, redeem on a Thursday
+            with a 3-day code → use through the end of Monday.
           </Text>
           <TextInput
             style={styles.input}

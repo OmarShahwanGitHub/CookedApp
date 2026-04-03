@@ -73,14 +73,18 @@ app.post('/parse-video', async (req, res) => {
   }
 });
 
-/** Last instant of access: end of UTC calendar day on the Nth day (day 1 = redeem day). */
+/**
+ * Last instant of access: end of UTC calendar day on (redeem UTC date + numDays + 1).
+ * Example: redeem Thursday UTC with days=3 → access through end of Monday UTC.
+ * (Matches “3-day” as the code’s day count plus the full redeem day and following span.)
+ */
 function entitlementExpiresEndOfLastDay(redeemDate, numDays) {
   const n = Math.max(1, Math.floor(Number(numDays)) || 3);
   const d = new Date(redeemDate);
   const y = d.getUTCFullYear();
   const m = d.getUTCMonth();
   const day = d.getUTCDate();
-  return new Date(Date.UTC(y, m, day + (n - 1), 23, 59, 59, 999));
+  return new Date(Date.UTC(y, m, day + n + 1, 23, 59, 59, 999));
 }
 
 // One-time promo codes (Supabase-backed)

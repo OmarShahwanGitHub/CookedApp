@@ -17,10 +17,13 @@ async function loadRecipes(): Promise<Recipe[]> {
 }
 
 async function saveRecipes(recipes: Recipe[]): Promise<void> {
+  const json = JSON.stringify(recipes);
+  console.log('[Recipe][Storage] writing', recipes.length, 'recipe(s),', json.length, 'bytes');
   try {
-    await AsyncStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(recipes));
+    await AsyncStorage.setItem(RECIPES_STORAGE_KEY, json);
   } catch (error) {
-    console.error('Failed to save recipes:', error);
+    console.error('[Recipe][Storage] setItem FAILED — recipe will not persist:', error);
+    throw error;
   }
 }
 
@@ -57,8 +60,12 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
 
   const { mutate: syncRecipes } = useMutation({
     mutationFn: saveRecipes,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recipes'] });
+    onSuccess: (_void, savedList) => {
+      console.log('[Recipe][Storage] save OK, syncing query cache');
+      queryClient.setQueryData(['recipes'], savedList);
+    },
+    onError: (err, savedList) => {
+      console.error('[Recipe][Storage] save mutation failed:', err, 'list length was', savedList?.length);
     },
   });
 
@@ -69,40 +76,49 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    const updated = [...recipes, newRecipe];
-    setRecipes(updated);
-    syncRecipes(updated);
+    console.log('[Recipe][Add]', newRecipe.title?.slice(0, 60), 'id=', newRecipe.id);
+    setRecipes((prev) => {
+      const updated = [...prev, newRecipe];
+      syncRecipes(updated);
+      return updated;
+    });
     return newRecipe;
-  }, [recipes, syncRecipes]);
+  }, [syncRecipes]);
 
   const updateRecipe = useCallback((id: string, updates: Partial<Recipe>) => {
-    const updated = recipes.map(r =>
-      r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r
-    );
-    setRecipes(updated);
-    syncRecipes(updated);
-  }, [recipes, syncRecipes]);
+    setRecipes((prev) => {
+      const updated = prev.map((r) =>
+        r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r
+      );
+      syncRecipes(updated);
+      return updated;
+    });
+  }, [syncRecipes]);
 
   const deleteRecipe = useCallback((id: string) => {
-    const updated = recipes.filter(r => r.id !== id);
-    setRecipes(updated);
-    syncRecipes(updated);
-  }, [recipes, syncRecipes]);
+    setRecipes((prev) => {
+      const updated = prev.filter((r) => r.id !== id);
+      syncRecipes(updated);
+      return updated;
+    });
+  }, [syncRecipes]);
 
   const updateIngredient = useCallback((recipeId: string, ingredientId: string, updates: Partial<Ingredient>) => {
-    const updated = recipes.map(r => {
-      if (r.id !== recipeId) return r;
-      return {
-        ...r,
-        ingredients: r.ingredients.map(i =>
-          i.id === ingredientId ? { ...i, ...updates } : i
-        ),
-        updatedAt: new Date().toISOString(),
-      };
+    setRecipes((prev) => {
+      const updated = prev.map((r) => {
+        if (r.id !== recipeId) return r;
+        return {
+          ...r,
+          ingredients: r.ingredients.map((i) =>
+            i.id === ingredientId ? { ...i, ...updates } : i
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+      syncRecipes(updated);
+      return updated;
     });
-    setRecipes(updated);
-    syncRecipes(updated);
-  }, [recipes, syncRecipes]);
+  }, [syncRecipes]);
 
   const toggleIngredientChecked = useCallback((recipeId: string, ingredientId: string) => {
     const recipe = recipes.find(r => r.id === recipeId);
