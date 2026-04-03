@@ -30,6 +30,12 @@ function getJwtRole(token) {
 }
 
 app.use(cors());
+app.use((req, res, next) => {
+  if (req.method === 'POST' && req.path === '/promo/redeem') {
+    console.log('[Promo] Incoming POST /promo/redeem (tcp received)', new Date().toISOString());
+  }
+  next();
+});
 app.use(express.json());
 
 // Lifetime recipe count per user_id (survives app reinstall when client sends same stable ID)

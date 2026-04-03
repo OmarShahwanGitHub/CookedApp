@@ -23,6 +23,35 @@ function getBackendBaseUrl(): string | null {
   return null;
 }
 
+const REDEEM_FETCH_ATTEMPTS = 4;
+
+/** POST can fail transiently on mobile / cold Render while GET works; retry with backoff. */
+async function postPromoRedeem(endpoint: string, payload: { code: string; user_id: string }): Promise<Response> {
+  const init: RequestInit = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+  };
+  let lastErr: unknown;
+  for (let i = 0; i < REDEEM_FETCH_ATTEMPTS; i++) {
+    try {
+      const res = await fetch(endpoint, init);
+      return res;
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn(`[Promo][Client] redeem fetch attempt ${i + 1}/${REDEEM_FETCH_ATTEMPTS} failed:`, msg);
+      if (i < REDEEM_FETCH_ATTEMPTS - 1) {
+        await new Promise((r) => setTimeout(r, 900 * (i + 1)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 function formatAccessThrough(iso: string): string {
   try {
     const d = new Date(iso);
@@ -62,11 +91,12 @@ export default function RedeemCodeScreen() {
       const endpoint = `${base}/promo/redeem`;
       const payload = { code: code.trim().toUpperCase(), user_id: userId };
       console.log('[Promo][Client] redeem request', { endpoint, payload });
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      try {
+        await fetch(`${base.replace(/\/$/, '')}/health`, { method: 'GET' }).catch(() => undefined);
+      } catch {
+        /* ignore — warm Render / DNS before POST */
+      }
+      const res = await postPromoRedeem(endpoint, payload);
       const raw = await res.text();
       let data: any = {};
       try {
@@ -98,7 +128,15 @@ export default function RedeemCodeScreen() {
       }
     } catch (err) {
       console.error('Redeem code error:', err);
-      Alert.alert('Error', 'Failed to redeem code. Please try again.');
+      const isNetwork =
+        err instanceof TypeError &&
+        (String(err.message).includes('Network request failed') || String(err.message).includes('Failed to fetch'));
+      Alert.alert(
+        'Could not reach server',
+        isNetwork
+          ? 'Your phone could not complete the request to the Cooked backend. Try again in a few seconds, switch Wi‑Fi/cellular, or open Render logs to confirm the service is up. GET /health and GET /promo/entitlement working but POST failing usually means a transient drop—retries often fix it.'
+          : 'Failed to redeem code. Please try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
