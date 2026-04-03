@@ -8,6 +8,11 @@ const ANON_USER_ID_KEY = 'cooked_anon_user_id';
 
 let Purchases: any = null;
 
+/** In-memory cache + single in-flight promise so parallel calls never mint multiple IDs. */
+let cachedStableUserId: string | null = null;
+let stableUserIdInFlight: Promise<string> | null = null;
+let loggedSecureStoreFallback = false;
+
 async function getPurchases() {
   if (Purchases) return Purchases;
 
@@ -67,39 +72,68 @@ export function getRecipeLimit(): number {
   return FREE_RECIPE_LIMIT;
 }
 
-/** Stable ID for this install (persists in Keychain on iOS across reinstall when possible). Used to sync lifetime recipe count with backend. */
-export async function getStableUserId(): Promise<string> {
-  try {
-    if (Platform.OS === 'web') {
-      let id = await AsyncStorage.getItem(ANON_USER_ID_KEY);
-      if (!id) {
-        id = 'web_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-        await AsyncStorage.setItem(ANON_USER_ID_KEY, id);
-      }
-      return id;
-    }
-    const SecureStore = require('expo-secure-store').default;
-    let id = await SecureStore.getItemAsync(ANON_USER_ID_KEY);
-    if (!id) {
-      const uuid = 'anon_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      await SecureStore.setItemAsync(ANON_USER_ID_KEY, uuid);
-      id = uuid;
-    }
-    return id;
-  } catch (e) {
-    // Never return a fresh random ID every call — promo redeem + entitlement must share the same user_id.
-    console.warn('[Subscription] SecureStore unavailable, falling back to AsyncStorage for user id:', e);
+async function resolveStableUserIdOnce(): Promise<string> {
+  if (Platform.OS === 'web') {
     let id = await AsyncStorage.getItem(ANON_USER_ID_KEY);
     if (!id) {
-      id = 'local_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      try {
-        await AsyncStorage.setItem(ANON_USER_ID_KEY, id);
-      } catch (storeErr) {
-        console.error('[Subscription] AsyncStorage fallback failed:', storeErr);
-      }
+      id = 'web_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      await AsyncStorage.setItem(ANON_USER_ID_KEY, id);
     }
     return id;
   }
+
+  // expo-secure-store often has no `.default` — using only `.default` yields undefined → getItemAsync crash.
+  let secure: { getItemAsync: (k: string) => Promise<string | null>; setItemAsync: (k: string, v: string) => Promise<void> };
+  try {
+    const mod = require('expo-secure-store');
+    secure = (mod?.default ?? mod) as typeof secure;
+  } catch {
+    secure = null as any;
+  }
+
+  if (secure && typeof secure.getItemAsync === 'function') {
+    try {
+      let id = await secure.getItemAsync(ANON_USER_ID_KEY);
+      if (!id) {
+        const uuid = 'anon_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        await secure.setItemAsync(ANON_USER_ID_KEY, uuid);
+        id = uuid;
+      }
+      return id;
+    } catch (e) {
+      if (!loggedSecureStoreFallback) {
+        loggedSecureStoreFallback = true;
+        console.warn('[Subscription] SecureStore failed; using AsyncStorage for user id (once):', e);
+      }
+    }
+  } else if (!loggedSecureStoreFallback) {
+    loggedSecureStoreFallback = true;
+    console.warn('[Subscription] SecureStore not available; using AsyncStorage for user id (Expo Go / web preview).');
+  }
+
+  let id = await AsyncStorage.getItem(ANON_USER_ID_KEY);
+  if (!id) {
+    id = 'local_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    await AsyncStorage.setItem(ANON_USER_ID_KEY, id);
+  }
+  return id;
+}
+
+/** Stable ID for this install (persists in Keychain on iOS across reinstall when possible). Used to sync lifetime recipe count with backend. */
+export async function getStableUserId(): Promise<string> {
+  if (cachedStableUserId) return cachedStableUserId;
+  if (!stableUserIdInFlight) {
+    stableUserIdInFlight = resolveStableUserIdOnce()
+      .then((id) => {
+        cachedStableUserId = id;
+        return id;
+      })
+      .catch((e) => {
+        stableUserIdInFlight = null;
+        throw e;
+      });
+  }
+  return stableUserIdInFlight;
 }
 
 function getBackendBaseUrl(): string | null {
