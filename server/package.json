@@ -4,6 +4,7 @@
   "private": true,
   "description": "Video parsing backend for Cooked app (AssemblyAI transcription + AI recipe parsing)",
   "main": "index.js",
+  "engines": { "node": "22.x" },
   "scripts": { "start": "node index.js" },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
