@@ -267,8 +267,11 @@ async function callAnthropicText(prompt: string, apiKey: string): Promise<Parsed
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 2048,
+      // Sonnet 5 runs adaptive thinking by default; keep it off so the 2048-token
+      // budget goes entirely to the recipe JSON (same behavior as Sonnet 4).
+      thinking: { type: 'disabled' },
       messages: [{ role: 'user', content: prompt }],
     }),
   });
@@ -278,7 +281,7 @@ async function callAnthropicText(prompt: string, apiKey: string): Promise<Parsed
   }
 
   const data = await response.json();
-  const content = data.content?.[0]?.text;
+  const content = data.content?.find((b: any) => b.type === 'text')?.text;
   return extractAndValidateJson(content);
 }
 
@@ -302,8 +305,11 @@ async function callAnthropicVision(images: ImageData[], visionPrompt: string, ap
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 2048,
+      // Sonnet 5 runs adaptive thinking by default; keep it off so the 2048-token
+      // budget goes entirely to the recipe JSON (same behavior as Sonnet 4).
+      thinking: { type: 'disabled' },
       messages: [{ role: 'user', content }],
     }),
   });
@@ -313,7 +319,7 @@ async function callAnthropicVision(images: ImageData[], visionPrompt: string, ap
   }
 
   const data = await response.json();
-  const text = data.content?.[0]?.text;
+  const text = data.content?.find((b: any) => b.type === 'text')?.text;
   return extractAndValidateJson(text);
 }
 

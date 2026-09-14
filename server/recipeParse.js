@@ -88,12 +88,15 @@ function callAnthropic(prompt, apiKey) {
       'anthropic-version': '2023-06-01',
     },
     body: {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 2048,
+      // Sonnet 5 runs adaptive thinking by default; keep it off so the 2048-token
+      // budget goes entirely to the recipe JSON (same behavior as Sonnet 4).
+      thinking: { type: 'disabled' },
       messages: [{ role: 'user', content: prompt }],
     },
     extract: (data) => {
-      const text = data.content?.[0]?.text;
+      const text = data.content?.find((b) => b.type === 'text')?.text;
       return extractAndValidateJson(text);
     },
   });
